@@ -23,16 +23,10 @@ The intended users for this application are:
 To ensure secure access control and data management, our application features three distinct user roles with varying permissions:
 
 | User Role | Access Level | Key Functions and Permissions |
-| --- | --- | --- |
-| **System Admin** | High | Can add brand-new study rooms to the system, permanently delete retired rooms, and manage all user accounts and roles.
-
- |
-| **Librarian (Staff)** | Medium | Can view all daily bookings, cancel student no-shows, and update a room's physical status (e.g., marking a room as "Out of Order").
-
- |
-| **Regular Student** | Standard | Can search for available rooms, create new bookings, view their personalized dashboard, and cancel their own bookings.
-
- |
+| :--- | :--- | :--- |
+| **System Admin** | High | Can add brand-new study rooms to the system, permanently delete retired rooms, and manage all user accounts and roles. |
+| **Librarian (Staff)** | Medium | Can view all daily bookings, cancel student no-shows, and update a room's physical status (e.g., marking a room as "Out of Order"). |
+| **Regular Student** | Standard | Can search for available rooms, create new bookings, view their personalized dashboard, and cancel their own bookings. |
 
 ## Technology Stack
 
