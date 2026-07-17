@@ -69,11 +69,11 @@ app.post('/register', validateRegistration,(req, res) => {
     const {email, name, password, role} = req.body
 
     const sql = 'INSERT INTO users (email, name, password, role) VALUES (?,?,SHA1(?),?)'
-    db.query(sql, [email, name, password, role], (error, result) =>{
+    db.query(sql, [email, name, password, role], (error, results) =>{
         if (error) {
             throw error
         }
-        console.log(result)
+        console.log(results)
         req.flash('success', 'Registration successful! Please log in.')
         res.redirect('/login')
     })
@@ -81,7 +81,41 @@ app.post('/register', validateRegistration,(req, res) => {
 //end of registration routes
 
 
-// Starting the server
+
+//start of the login routes
+app.get('/login', (req, res) => {
+    res.render('login_page', { message: req.flash('success'), error: req.flash('error') })
+})
+
+
+app.post('/login', (req,res)=>{
+    const {email, password} = req.body
+    const sql = "SELECT * FROM users WHERE email = ? AND password = SHA1(?)"
+
+    if (!email || !password) {
+        req.flash('error', 'All field are required!')
+        res.redirect('/login')
+    };
+
+    db.query(sql, [email, password], (error, results) => {
+        if (error) {
+            throw error
+        } 
+        if (results.length > 0) {
+            req.session.user = results[0]
+            req.flash('success', 'Login Successful!')
+            res.redirect('/') //to be updated
+        } else {
+            // Invalid credentials
+            req.flash('error', 'Invalid email or password.');
+            res.redirect('/login');
+        }
+    })
+});
+
+//end of the login routes
+
+
 app.listen(3000, () => {
     console.log('Server started on port 3000');
 });
