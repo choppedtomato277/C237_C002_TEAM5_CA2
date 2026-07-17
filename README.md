@@ -45,7 +45,7 @@ This project demonstrates core skills learned in class, built using the followin
 ## Setup and Installation
 
 1. Clone this repository to your local machine.
-2. Run `npm install` to install all dependencies (Express, EJS, MySQL2, Express-Session).
+2. Run `npm install` to install all dependencies (Express, EJS, MySQL2, Express-Session, connect-flash).
 3. Import the included `.sql` database file into your local MySQL server.
 
 
