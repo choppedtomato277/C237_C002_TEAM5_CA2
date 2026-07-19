@@ -55,11 +55,11 @@
         msgs.scrollTop = msgs.scrollHeight;
       }
 
-      async function queryFAQ(q){
-        const url = q ? `/faq?q=${encodeURIComponent(q)}` : '/faq';
+      async function queryChat(q){
+        const url = q ? `/chat?q=${encodeURIComponent(q)}` : '/chat';
         try{
           const res = await fetch(url);
-          if (!res.ok) return { error: true, text: 'FAQ request failed' };
+          if (!res.ok) return { error: true, text: 'Chat request failed' };
           const data = await res.json();
           return { error:false, data };
         } catch(e){
@@ -74,19 +74,22 @@
         input.value = '';
         send.disabled = true;
 
-        const result = await queryFAQ(text);
+        const result = await queryChat(text);
         if (result.error){
-          appendMessage('Sorry — could not reach FAQ: ' + (result.text||''));
+          appendMessage('Sorry — could not reach the assistant: ' + (result.text||''));
         } else {
           const d = result.data;
-          if (d && d.results && d.results.length){
-            // show up to 3 matches
+          if (d.source === 'faq' && d.results && d.results.length){
             const items = d.results.slice(0,3).map(r => `<strong>${escapeHtml(r.q)}</strong><div>${escapeHtml(r.a)}</div>`).join('<hr>');
-            appendMessage(`<div>Found ${d.count} result(s). Showing top matches:</div>${items}`);
-          } else if (d && d.entries){
-            appendMessage('FAQ v1: ' + escapeHtml(JSON.stringify(d.entries.slice(0,3), null, 2)));
+            appendMessage(`<div>Found ${d.count} FAQ result(s):</div>${items}`);
+          } else if (d.source === 'llm' || d.source === 'rule'){
+            appendMessage(escapeHtml(d.reply || 'Sorry, no reply')); 
++            if (d.source === 'rule' && d.reply && d.reply.startsWith('I can chat briefly.')) {
++              appendMessage('If you want, ask anything else or say "Hi" to start a casual chat.');
++            }
+          } else if (d.source === 'error'){
+            appendMessage('Sorry — the assistant could not process your request.');
           } else {
-            // Show fallback message and ask whether user wants to continue
             showFallbackPrompt();
           }
         }
