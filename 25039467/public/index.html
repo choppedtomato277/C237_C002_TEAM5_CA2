@@ -86,10 +86,57 @@
           } else if (d && d.entries){
             appendMessage('FAQ v1: ' + escapeHtml(JSON.stringify(d.entries.slice(0,3), null, 2)));
           } else {
-            appendMessage("i will get a CSO to assist you on this matter. please expect a call-back in 3 working days");
+            // Show fallback message and ask whether user wants to continue
+            showFallbackPrompt();
           }
         }
         send.disabled = false;
+      }
+
+      function showFallbackPrompt(){
+        const fallback = "I will get a CSO to assist you on this matter. Please expect a call-back in 3 working days.";
+        appendMessage(fallback);
+
+        // Create prompt buttons
+        const container = document.createElement('div');
+        container.style.marginTop = '8px';
+        const yes = document.createElement('button');
+        yes.textContent = 'Y';
+        yes.style.marginRight = '8px';
+        const no = document.createElement('button');
+        no.textContent = 'N';
+
+        // Wrap in a small bubble for visual grouping
+        const promptWrapper = document.createElement('div');
+        promptWrapper.className = 'msg bot';
+        const promptBubble = document.createElement('div');
+        promptBubble.className = 'bubble bot';
+        promptBubble.appendChild(container);
+        container.appendChild(document.createTextNode('Would you like to continue chat (Y/N)? '));
+        container.appendChild(yes);
+        container.appendChild(no);
+
+        promptWrapper.appendChild(promptBubble);
+        msgs.appendChild(promptWrapper);
+        msgs.scrollTop = msgs.scrollHeight;
+
+        // Handlers
+        yes.addEventListener('click', ()=>{
+          // remove prompt
+          promptWrapper.remove();
+          appendMessage('Okay — how can I help you further?');
+          input.disabled = false;
+          send.disabled = false;
+          input.focus();
+        });
+
+        no.addEventListener('click', ()=>{
+          promptWrapper.remove();
+          appendMessage('Have a nice day!');
+          // disable further input
+          input.disabled = true;
+          send.disabled = true;
+        });
       }
 
       function escapeHtml(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\"/g,'&quot;'); }
