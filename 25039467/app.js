@@ -82,12 +82,32 @@ app.get('/chat', async (req, res) => {
     }
   }
 
-  // No API key — very small rule-based responses for chit-chat
+  // No API key — use a simple rule-based chat brain for local human-like replies.
   const small = q.toLowerCase();
-  if (small.includes('how are you')) return res.json({ source:'rule', reply: "I'm doing well, thanks for asking — how can I help you today?" });
-  if (small.includes('hello') || small.includes('hi')) return res.json({ source:'rule', reply: 'Hello! I can answer FAQ questions or have a quick chat.' });
-  if (small.includes('thanks') || small.includes('thank you')) return res.json({ source:'rule', reply: "You're welcome!" });
-  return res.json({ source:'rule', reply: "I can chat briefly. To enable more natural replies, set your OPENAI_API_KEY environment variable." });
+  const random = (items) => items[Math.floor(Math.random() * items.length)];
+  const contains = (phrases) => phrases.some(phrase => small.includes(phrase));
+
+  if (contains(['how are you', 'how r you', 'how you doing', 'how are things', 'how is it going'])) {
+    return res.json({ source:'rule', reply: random(["I'm doing pretty well, thanks! How can I help you today?", "I'm fine, thanks for asking. What would you like to know?", "Doing great — happy to chat and help however I can."]) });
+  }
+  if (contains(['hello', 'hi', 'hey', 'good morning', 'good afternoon', 'good evening'])) {
+    return res.json({ source:'rule', reply: random(["Hello there! What can I help you with today?", "Hi! I'm here to answer your questions.", "Hey! Feel free to ask me about the project or anything related."]) });
+  }
+  if (contains(['thanks', 'thank you', 'thx'])) {
+    return res.json({ source:'rule', reply: random(["You're welcome!", "No problem — happy to help.", "Glad I could help!"]) });
+  }
+  if (contains(['bye', 'goodbye', 'see you', 'talk later', 'later'])) {
+    return res.json({ source:'rule', reply: random(["Goodbye! Have a nice day.", "Talk to you later — take care!", "See you! Feel free to chat again anytime."]) });
+  }
+  if (contains(['what can you do', 'what do you do', 'can you help', 'help me', 'assist me'])) {
+    return res.json({ source:'rule', reply: random(["I can chat briefly and answer simple questions about the project.", "I can respond to basic chat prompts and look up FAQ entries when available.", "I can help with simple questions and redirect you if I don't have the answer."]) });
+  }
+  if (contains(['your name', 'who are you', 'who is this'])) {
+    return res.json({ source:'rule', reply: random(["I'm your 24/7 assistant. I can chat with you and answer project-related questions.", "I'm the friendly chat agent for this study room booking project.", "I am the agent here to assist you. Ask me anything."]) });
+  }
+
+  // Default friendly fallback
+  return res.json({ source:'rule', reply: "I can chat briefly. Ask me something else, and I'll do my best to respond like a helpful human." });
 });
 
 app.listen(port, () => console.log(`Agent listening on port ${port}`));
