@@ -3,53 +3,99 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title>25039467 Agent UI</title>
+    <title>24/7 Agent on Room Bookging System to assist you!</title>
     <style>
-      body { font-family: Arial, sans-serif; max-width: 800px; margin: 24px auto; padding: 0 12px; }
-      input[type=text]{ width: 70%; padding: 8px; }
-      button{ padding: 8px 12px; }
-      pre { background:#f6f6f6; padding:12px; overflow:auto }
+      :root{ --bg:#f4f7fb; --user:#0b93f6; --bot:#e5e5ea; --accent:#1f6feb }
+      body{ font-family:Inter,Segoe UI,Arial,Helvetica,sans-serif; background:var(--bg); margin:0; padding:0 }
+      .container{ max-width:820px; margin:24px auto; background:#fff; border-radius:8px; box-shadow:0 6px 18px rgba(20,20,40,0.06); overflow:hidden }
+      header{ background:var(--accent); color:#fff; padding:18px 20px }
+      header h1{ margin:0; font-size:18px }
+      .chat{ height:520px; display:flex; flex-direction:column }
+      .messages{ flex:1; padding:18px; overflow:auto; background:linear-gradient(180deg,#fff, #fbfdff) }
+      .composer{ display:flex; padding:12px; gap:8px; border-top:1px solid #eee }
+      .composer input{ flex:1; padding:10px 12px; border-radius:6px; border:1px solid #ddd }
+      .composer button{ background:var(--accent); color:#fff; border:none; padding:10px 14px; border-radius:6px }
+      .msg{ display:flex; margin-bottom:12px }
+      .msg.user{ justify-content:flex-end }
+      .bubble{ max-width:68%; padding:10px 14px; border-radius:14px; line-height:1.4 }
+      .bubble.user{ background:var(--user); color:#fff; border-bottom-right-radius:4px }
+      .bubble.bot{ background:var(--bot); color:#000; border-bottom-left-radius:4px }
+      .meta{ font-size:12px; color:#666; margin-bottom:8px }
     </style>
   </head>
   <body>
-    <h1>25039467 — Agent UI (FAQ v1)</h1>
-    <p>Ask a question or search the FAQ (read-only).</p>
-    <div>
-      <input id="q" type="text" placeholder="search term (e.g. booking)" />
-      <button id="search">Search FAQ</button>
+    <div class="container">
+      <header>
+        <h1>24/7 Agent on Room Bookging System to assist you!</h1>
+      </header>
+      <div class="chat">
+        <div id="messages" class="messages">
+          <div class="msg bot"><div class="bubble bot">Hello — I'm a read-only assistant. Ask about the project or search the FAQ.</div></div>
+        </div>
+        <div class="composer">
+          <input id="input" type="text" placeholder="Type your question (e.g. booking, rooms, technologies)" />
+          <button id="send">Send</button>
+        </div>
+      </div>
     </div>
-    <h2>Results</h2>
-    <div id="results">No query yet. Click Search or open <code>/faq</code>.</div>
 
     <script>
-      const elQ = document.getElementById('q');
-      const btn = document.getElementById('search');
-      const out = document.getElementById('results');
+      const msgs = document.getElementById('messages');
+      const input = document.getElementById('input');
+      const send = document.getElementById('send');
 
-      async function runQuery(){
-        const q = encodeURIComponent(elQ.value || '');
-        const url = q ? `/faq?q=${q}` : '/faq';
-        out.textContent = 'Loading...';
+      function appendMessage(text, who='bot'){
+        const wrapper = document.createElement('div');
+        wrapper.className = 'msg ' + (who==='user' ? 'user' : 'bot');
+        const bubble = document.createElement('div');
+        bubble.className = 'bubble ' + (who==='user' ? 'user' : 'bot');
+        bubble.innerHTML = text;
+        wrapper.appendChild(bubble);
+        msgs.appendChild(wrapper);
+        msgs.scrollTop = msgs.scrollHeight;
+      }
+
+      async function queryFAQ(q){
+        const url = q ? `/faq?q=${encodeURIComponent(q)}` : '/faq';
         try{
           const res = await fetch(url);
+          if (!res.ok) return { error: true, text: 'FAQ request failed' };
           const data = await res.json();
-          if (res.ok){
-            if (data.results){
-              out.innerHTML = `<p>Found ${data.count} result(s) for "${data.query}"</p>` +
-                data.results.map(r=>`<h3>${r.q}</h3><pre>${r.a}</pre>`).join('');
-            } else {
-              out.innerHTML = `<pre>${JSON.stringify(data, null, 2)}</pre>`;
-            }
-          } else {
-            out.innerHTML = `<pre>Error: ${JSON.stringify(data)}</pre>`;
-          }
-        } catch (e){
-          out.innerHTML = `<pre>Request error: ${e.message}</pre>`;
+          return { error:false, data };
+        } catch(e){
+          return { error:true, text: e.message };
         }
       }
 
-      btn.addEventListener('click', runQuery);
-      elQ.addEventListener('keydown', (e)=>{ if (e.key==='Enter') runQuery(); });
+      async function handleSend(){
+        const text = input.value.trim();
+        if(!text) return;
+        appendMessage(text, 'user');
+        input.value = '';
+        send.disabled = true;
+
+        const result = await queryFAQ(text);
+        if (result.error){
+          appendMessage('Sorry — could not reach FAQ: ' + (result.text||''));
+        } else {
+          const d = result.data;
+          if (d && d.results && d.results.length){
+            // show up to 3 matches
+            const items = d.results.slice(0,3).map(r => `<strong>${escapeHtml(r.q)}</strong><div>${escapeHtml(r.a)}</div>`).join('<hr>');
+            appendMessage(`<div>Found ${d.count} result(s). Showing top matches:</div>${items}`);
+          } else if (d && d.entries){
+            appendMessage('FAQ v1: ' + escapeHtml(JSON.stringify(d.entries.slice(0,3), null, 2)));
+          } else {
+            appendMessage('No information found for your query.');
+          }
+        }
+        send.disabled = false;
+      }
+
+      function escapeHtml(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\"/g,'&quot;'); }
+
+      send.addEventListener('click', handleSend);
+      input.addEventListener('keydown', (e)=>{ if (e.key==='Enter') handleSend(); });
     </script>
   </body>
 </html>
