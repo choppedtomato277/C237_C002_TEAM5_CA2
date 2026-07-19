@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>25039467 Agent UI</title>
+    <style>
+      body { font-family: Arial, sans-serif; max-width: 800px; margin: 24px auto; padding: 0 12px; }
+      input[type=text]{ width: 70%; padding: 8px; }
+      button{ padding: 8px 12px; }
+      pre { background:#f6f6f6; padding:12px; overflow:auto }
+    </style>
+  </head>
+  <body>
+    <h1>25039467 — Agent UI (FAQ v1)</h1>
+    <p>Ask a question or search the FAQ (read-only).</p>
+    <div>
+      <input id="q" type="text" placeholder="search term (e.g. booking)" />
+      <button id="search">Search FAQ</button>
+    </div>
+    <h2>Results</h2>
+    <div id="results">No query yet. Click Search or open <code>/faq</code>.</div>
+
+    <script>
+      const elQ = document.getElementById('q');
+      const btn = document.getElementById('search');
+      const out = document.getElementById('results');
+
+      async function runQuery(){
+        const q = encodeURIComponent(elQ.value || '');
+        const url = q ? `/faq?q=${q}` : '/faq';
+        out.textContent = 'Loading...';
+        try{
+          const res = await fetch(url);
+          const data = await res.json();
+          if (res.ok){
+            if (data.results){
+              out.innerHTML = `<p>Found ${data.count} result(s) for "${data.query}"</p>` +
+                data.results.map(r=>`<h3>${r.q}</h3><pre>${r.a}</pre>`).join('');
+            } else {
+              out.innerHTML = `<pre>${JSON.stringify(data, null, 2)}</pre>`;
+            }
+          } else {
+            out.innerHTML = `<pre>Error: ${JSON.stringify(data)}</pre>`;
+          }
+        } catch (e){
+          out.innerHTML = `<pre>Request error: ${e.message}</pre>`;
+        }
+      }
+
+      btn.addEventListener('click', runQuery);
+      elQ.addEventListener('keydown', (e)=>{ if (e.key==='Enter') runQuery(); });
+    </script>
+  </body>
+</html>

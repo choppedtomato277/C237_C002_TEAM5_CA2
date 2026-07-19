@@ -5,9 +5,9 @@ const path = require('path');
 const app = express();
 const port = process.env.PORT || 3000;
 
-// Root route: basic info and link to FAQ
+// Root route: serve simple UI page
 app.get('/', (req, res) => {
-  res.send('<h1>25039467 — Personal Agent (v1)</h1><p>View the <a href="/faq">FAQ v1</a> for project information.</p>');
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
 // FAQ route: returns the local FAQ JSON (read-only)
