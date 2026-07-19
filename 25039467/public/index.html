@@ -85,8 +85,8 @@
           } else if (d.source === 'llm' || d.source === 'rule'){
             appendMessage(escapeHtml(d.reply || 'Sorry, no reply'));
             if (d.source === 'rule' && d.reply && d.reply.startsWith('I can chat briefly.')) {
-+              appendMessage('If you want, ask anything else or say "Hi" to start a casual chat.');
-+            }
+              appendMessage('If you want, ask anything else or say "Hi" to start a casual chat.');
+            }
           } else if (d.source === 'error'){
             appendMessage('Sorry — the assistant could not process your request.');
           } else {
