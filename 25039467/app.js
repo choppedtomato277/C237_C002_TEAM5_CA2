@@ -15,7 +15,24 @@ app.get('/faq', (req, res) => {
   const faqPath = path.join(__dirname, 'faq.json');
   fs.readFile(faqPath, 'utf8', (err, data) => {
     if (err) return res.status(500).json({ error: 'FAQ not available' });
-    res.type('application/json').send(data);
+    try {
+      const faq = JSON.parse(data);
+      const q = (req.query.q || '').toLowerCase().trim();
+      if (!q) {
+        return res.type('application/json').send(JSON.stringify(faq, null, 2));
+      }
+
+      // Filter entries by question or answer text (case-insensitive)
+      const matches = (faq.entries || []).filter(e => {
+        const question = (e.q || '').toLowerCase();
+        const answer = (e.a || '').toLowerCase();
+        return question.includes(q) || answer.includes(q);
+      });
+
+      return res.json({ query: req.query.q, count: matches.length, results: matches });
+    } catch (parseErr) {
+      return res.status(500).json({ error: 'Failed to parse FAQ' });
+    }
   });
 });
 
