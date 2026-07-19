@@ -37,7 +37,37 @@ app.use(session({
     //session expire after one week of inactivity
     cookie: {maxAge: 7 * 24 * 60 * 60 * 1000} //1000 = milliseconds
 }))
+// end of setting up session 
 
+//check whether the user is already authenticated or not, if not redirect to the login page
+const checkAuthenticated = (req, res, next) => {
+    if (req.session.user) { 
+        next()
+    } else {
+        req.flash('error', 'Session Timed Out! Please Login again!') 
+        res.redirect('/login')
+    }
+}
+
+const checkAdmin = (req, res, next) => {
+    if (req.session.user.role === 'admin'){  // all lowercase because we gave the user all lower case values in the registration form
+        next()
+    } else {
+        req.flash('error', 'Access is Denied, If you are an Admin, Please use an Admin account to access this resource!')
+        res.redirect('/') // to be updated
+    }
+}
+
+const checkStaff = (req, res, next) => {
+    if (req.session.user.role === 'staff'){  // all lowercase because we gave the user all lower case values in the registration form
+        next()
+    } else {
+        req.flash('error', 'Access is Denied, If you are a Staff, Please use an Staff account to access this resource!')
+        res.redirect('/') // to be updated
+    }
+}
+
+//end of checking roles and sessions
 
 
 app.get('/', (req, res) => {
@@ -101,10 +131,10 @@ app.post('/login', (req,res)=>{
         if (error) {
             throw error
         } 
-        if (results.length > 0) {
-            req.session.user = results[0]
+        if (results.length > 0) { // if there is a user with the valid credentials inside the database store them in the req.session.user
+            req.session.user = results[0] // results[0] because "results" itself is an array, it not later have to access req.session.user[0].role to check the role
             req.flash('success', 'Login Successful!')
-            res.redirect('/') //to be updated
+            res.redirect('/') //to be updated later
         } else {
             // Invalid credentials
             req.flash('error', 'Invalid email or password.');
