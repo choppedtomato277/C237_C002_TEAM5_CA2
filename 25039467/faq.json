@@ -1,0 +1,27 @@
+{
+  "version": "1.0",
+  "generatedBy": "assistant",
+  "notes": "FAQ v1 — initial snapshot. Will be updated when main is completed.",
+  "entries": [
+    {
+      "q": "What is this project?",
+      "a": "Study Room Booking System — a CA2 project to manage study room bookings on campus."
+    },
+    {
+      "q": "What technologies does the main project use?",
+      "a": "Backend: Node.js + Express; Frontend: EJS templates; Database: MySQL."
+    },
+    {
+      "q": "What is the purpose of this personal agent?",
+      "a": "A standalone, read-only web agent that serves FAQ info and helps you inspect project docs without modifying main."
+    },
+    {
+      "q": "Will this agent modify the main database or perform team functions?",
+      "a": "No. It is read-only and will not perform login, registration, room creation, booking edits, deletions, or searches."
+    },
+    {
+      "q": "How do I update the FAQ when main is complete?",
+      "a": "Edit `25039467/faq.json` with new entries or ask the assistant to re-scan the repo and populate a new FAQ version."
+    }
+  ]
+}
