@@ -83,8 +83,8 @@
             const items = d.results.slice(0,3).map(r => `<strong>${escapeHtml(r.q)}</strong><div>${escapeHtml(r.a)}</div>`).join('<hr>');
             appendMessage(`<div>Found ${d.count} FAQ result(s):</div>${items}`);
           } else if (d.source === 'llm' || d.source === 'rule'){
-            appendMessage(escapeHtml(d.reply || 'Sorry, no reply')); 
-+            if (d.source === 'rule' && d.reply && d.reply.startsWith('I can chat briefly.')) {
+            appendMessage(escapeHtml(d.reply || 'Sorry, no reply'));
+            if (d.source === 'rule' && d.reply && d.reply.startsWith('I can chat briefly.')) {
 +              appendMessage('If you want, ask anything else or say "Hi" to start a casual chat.');
 +            }
           } else if (d.source === 'error'){
