@@ -73,11 +73,18 @@ const checkStaff = (req, res, next) => {
 
 
 
-//start of homepage (LWIN HTOO MYAT)
-//still have to implement the routing according to the logged in role
+/* start of homepage (LWIN HTOO MYAT)
+still have to implement the routing according to the logged in role
+maybe use if else statement to render different "home pages" based on the role
+if (req.session.user.role === 'admin'){
+  res.render('partials/admin_page', {user: req.session.user})
+};
+OR we can use if else statements inside the index.ejs itself, 
+which i think would be more efficient to implement, 
+bec of the fact that we will need less ejs files that way */
 app.get('/', (req, res) => {
     res.render('partials/index', {user: req.session.user})
-});
+}); 
 //end of homepage (LWIN HTOO MYAT)
 
 
