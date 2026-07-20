@@ -39,7 +39,9 @@ app.use(session({
 }))
 // end of setting up session 
 
-//check whether the user is already authenticated or not, if not redirect to the login page
+
+//Lwin Htoo Myat
+//define functions to check whether the user is already authenticated or not, if not redirect to the login page
 const checkAuthenticated = (req, res, next) => {
     if (req.session.user) { 
         next()
@@ -62,19 +64,24 @@ const checkStaff = (req, res, next) => {
     if (req.session.user.role === 'staff'){  // all lowercase because we gave the user all lower case values in the registration form
         next()
     } else {
-        req.flash('error', 'Access is Denied, If you are a Staff, Please use an Staff account to access this resource!')
+        req.flash('error', 'Access is Denied, If you are a Staff, Please use a Staff account to access this resource!')
         res.redirect('/') // to be updated
     }
 }
 
-//end of checking roles and sessions
+//end of checking roles and sessions (LWIN HTOO MYAT)
 
 
+
+//start of homepage (LWIN HTOO MYAT)
+//still have to implement the routing according to the logged in role
 app.get('/', (req, res) => {
-    res.render('partials/index')
+    res.render('partials/index', {user: req.session.user})
 });
+//end of homepage (LWIN HTOO MYAT)
 
-//registration routes
+
+//registration routes (LWIN HTOO MYAT)
 const validateRegistration = (req, res, next) => {
     const {email, name, password, role} = req.body
 
@@ -108,11 +115,11 @@ app.post('/register', validateRegistration,(req, res) => {
         res.redirect('/login')
     })
 })
-//end of registration routes
+//end of registration routes (LWIN HTOO MYAT)
 
 
 
-//start of the login routes
+//start of the login routes (LWIN HTOO MYAT)
 app.get('/login', (req, res) => {
     res.render('login_page', { message: req.flash('success'), error: req.flash('error') })
 })
@@ -143,7 +150,7 @@ app.post('/login', (req,res)=>{
     })
 });
 
-//end of the login routes
+//end of the login routes (LWIN HTOO MYAT)
 
 
 app.listen(3000, () => {

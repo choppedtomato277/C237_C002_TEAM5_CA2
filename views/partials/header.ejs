@@ -1,0 +1,15 @@
+<header style="background: #fff; padding: 15px 20px; border-bottom: 1px solid #eee;">
+    <div style="display: flex; justify-content: space-between; align-items: center; max-width: 1200px; margin: 0 auto;">
+        <a href="/" style="text-decoration: none; color: #333; font-size: 18px; font-weight: 600;">Study Room Booking</a>
+        <nav>
+            <% if (user) { %>
+                <span style="color: #666; margin-right: 15px;">Welcome, <%= user.name %></span>
+                <a href="/dashboard" style="color: #007bff; text-decoration: none; margin-right: 15px;">Dashboard</a>
+                <a href="/login" style="color: #dc3545; text-decoration: none;">Logout</a>
+            <% } else { %>
+                <a href="/login" style="color: #333; text-decoration: none; margin-right: 15px;">Login</a>
+                <a href="/register" style="color: #007bff; text-decoration: none;">Register</a>
+            <% } %>
+        </nav>
+    </div>
+</header> <!-- this is a cheap reusable header, and to be updated later -->
