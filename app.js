@@ -269,19 +269,6 @@ app.post('/admin_access_requests/:id/reject', checkAdmin, (req, res) => {
 //end of manage admin access requests route (LWIN HTOO MYAT)
 
 
-//start of delete user route (LWIN HTOO MYAT)
-app.post('/users/:id/delete', checkAdmin, (req, res) => {
-    const { id } = req.params
-    const sql = 'DELETE FROM users WHERE id = ?'
-    db.query(sql, [id], (error, results) => {
-        if (error) throw error
-        req.flash('success', 'User deleted.')
-        res.redirect('/view_users')
-    })
-})
-//end of delete user route (LWIN HTOO MYAT)
-
-
 app.listen(3000, () => {
     console.log('Server started on port 3000');
 });
