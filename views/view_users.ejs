@@ -50,28 +50,32 @@
     <%- include('partials/header') %>
 
     <div class="container">
-        <h1>View Users</h1>
+        <h1>Manage Users</h1>
 
         <% if (users && users.length > 0) { %>
             <table>
                 <thead>
                     <tr>
-                        <th>ID</th>
                         <th>Name</th>
                         <th>Email</th>
                         <th>Role</th>
                         <th>Created At</th>
+                        <th>Actions</th>
                     </tr>
                 </thead>
                 <tbody>
                     <% for (var i = 0; i < users.length; i++) { %>
                         <% var userItem = users[i]; %>
                         <tr>
-                            <td><%= userItem.id %></td>
                             <td><%= userItem.name %></td>
                             <td><%= userItem.email %></td>
                             <td><%= userItem.role || 'user' %></td>
                             <td><%= userItem.created_at ? new Date(userItem.created_at).toLocaleDateString() : 'N/A' %></td>
+                            <td>
+                                <form action="/users/<%= userItem.id %>/delete" method="POST">
+                                    <button type="submit" onclick="return confirm('Are you sure?')">Delete</button>
+                                </form>
+                            </td>
                         </tr>
                     <% } %>
                 </tbody>

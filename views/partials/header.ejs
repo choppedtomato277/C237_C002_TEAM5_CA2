@@ -7,8 +7,12 @@
                 <span class="nav-item nav-link text-muted">Welcome, <%= user.name %></span>
                 <% if (user.role === 'admin') { %>
                     <a class="nav-item nav-link text-success" href="/view_users">Manage Users</a>
+                    <a class="nav-item nav-link text-info" href="/manage_admin_access_requests">Admin Access Requests</a>
                 <% } else { %>
                     <a class="nav-item nav-link text-primary" href="/dashboard">Dashboard</a>
+                    <% if (user.role === 'staff' || user.role === 'employee') { %>
+                        <a class="nav-item nav-link text-warning" href="/request-admin_access">Request Admin Access</a>
+                    <% } %>
                 <% } %>
                 <a class="nav-item nav-link text-danger" href="/login">Logout</a> <!-- no need to make another app.get for the logout, logout page is essentially a login page :) -->
             <% } else { %>
