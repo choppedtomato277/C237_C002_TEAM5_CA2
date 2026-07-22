@@ -44,7 +44,7 @@ app.use(session({
 //define functions to check whether the user is already authenticated or not, if not redirect to the login page
 const checkAuthenticated = (req, res, next) => {
     if (req.session.user) { 
-        next()
+        next() // like continue in python
     } else {
         req.flash('error', 'Session Timed Out! Please Login again!') 
         res.redirect('/login')
@@ -60,19 +60,11 @@ const checkAdmin = (req, res, next) => {
     }
 }
 
-const checkStaff = (req, res, next) => {
-    if (req.session.user.role === 'staff'){  // all lowercase because we gave the user all lower case values in the registration form
-        next()
-    } else {
-        req.flash('error', 'Access is Denied, If you are a Staff, Please use a Staff account to access this resource!')
-        res.redirect('/') // to be updated
-    }
-}
 
 //end of checking roles and sessions (LWIN HTOO MYAT)
 
 
-
+//
 /* start of homepage (LWIN HTOO MYAT)
 still have to implement the routing according to the logged in role
 maybe use if else statement to render different "home pages" based on the role
@@ -215,7 +207,7 @@ app.get('/manage_admin_access_requests', checkAdmin, (req, res) => {
         if (error) {
             throw error
         } else {
-            res.render('manage_admin_access_requests', { user: req.session.user, requests: results })
+            res.render('manage_admin_access_requests', { user: req.session.user, requests: results }) //this aldy includes id
         }
     })
 })
