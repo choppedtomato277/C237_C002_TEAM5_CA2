@@ -1,1 +1,4 @@
 <%- include('header') %>
+<% if (error && error.length > 0) { %>
+    <div class="alert alert-danger text-center"><%= error[0] %></div>
+<% } %>

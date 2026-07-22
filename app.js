@@ -83,7 +83,7 @@ OR we can use if else statements inside the index.ejs itself,
 which i think would be more efficient to implement, 
 bec of the fact that we will need less ejs files that way */
 app.get('/', (req, res) => {
-    res.render('partials/index', {user: req.session.user})
+    res.render('partials/index', {user: req.session.user, error: req.flash('error')})
 }); 
 //end of homepage (LWIN HTOO MYAT)
 
@@ -159,6 +159,21 @@ app.post('/login', (req,res)=>{
 
 //end of the login routes (LWIN HTOO MYAT)
 
+
+//start of view_users route (LWIN HTOO MYAT)
+app.get('/view_users', checkAdmin, (req, res, next) => {
+    const sql = 'SELECT * FROM users'
+    db.query(sql, (error, results)=>{
+        if (error){
+            throw error
+        } else {
+            res.render('view_users', {user: req.session.user, users: results})
+        }
+    })
+})
+
+
+//end of view_users route
 
 app.listen(3000, () => {
     console.log('Server started on port 3000');

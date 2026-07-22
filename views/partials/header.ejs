@@ -1,15 +1,20 @@
-<header style="background: #fff; padding: 15px 20px; border-bottom: 1px solid #eee;">
-    <div style="display: flex; justify-content: space-between; align-items: center; max-width: 1200px; margin: 0 auto;">
-        <a href="/" style="text-decoration: none; color: #333; font-size: 18px; font-weight: 600;">Study Room Booking</a>
-        <nav>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+<nav class="navbar navbar-expand-lg navbar-light bg-white border-bottom">
+    <div class="container">
+        <a class="navbar-brand fw-bold " href="/">Study Room Booking — C237_002_TEAM5_CA2</a>
+        <div class="navbar-nav ms-auto">
             <% if (user) { %>
-                <span style="color: #666; margin-right: 15px;">Welcome, <%= user.name %></span>
-                <a href="/dashboard" style="color: #007bff; text-decoration: none; margin-right: 15px;">Dashboard</a>
-                <a href="/login" style="color: #dc3545; text-decoration: none;">Logout</a>
+                <span class="nav-item nav-link text-muted">Welcome, <%= user.name %></span>
+                <% if (user.role === 'admin') { %>
+                    <a class="nav-item nav-link text-success" href="/view_users">Manage Users</a>
+                <% } else { %>
+                    <a class="nav-item nav-link text-primary" href="/dashboard">Dashboard</a>
+                <% } %>
+                <a class="nav-item nav-link text-danger" href="/login">Logout</a> <!-- no need to make another app.get for the logout, logout page is essentially a login page :) -->
             <% } else { %>
-                <a href="/login" style="color: #333; text-decoration: none; margin-right: 15px;">Login</a>
-                <a href="/register" style="color: #007bff; text-decoration: none;">Register</a>
+                <a class="nav-item nav-link" href="/login">Login</a>
+                <a class="nav-item nav-link text-primary" href="/register">Register</a>
             <% } %>
-        </nav>
+        </div>
     </div>
-</header> <!-- this is a cheap reusable header, and to be updated later -->
+</nav>
