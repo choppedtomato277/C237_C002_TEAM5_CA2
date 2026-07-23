@@ -1,10 +1,10 @@
 const express = require('express');
 const mysql = require('mysql2');
 const app = express();
-const session = require('express-session')
-const flash = require('connect-flash')
+const session = require('express-session');
+const flash = require('connect-flash');
 
-//database 
+// Database 
 const db = mysql.createConnection({
     host: 'c237-marlina-mysql.Mysql.database.azure.com',
     user: 'c237_002',
@@ -22,81 +22,68 @@ db.connect((err) => {
     console.log('Connected to database');
 });
 
-app.use(express.urlencoded({ extended: false })); // to manipulate the url and get form data
+app.use(express.urlencoded({ extended: false }));
 app.use(express.static('public'));
 
-// Setting up EJS
+// Setting up EJS & Flash
 app.set('view engine', 'ejs');
-app.use(flash()); // setup flash
+app.use(flash());
 
-//setting up session 
+// Setting up session 
 app.use(session({
     secret: 'secret',
     resave: false, 
     saveUninitialized: true, 
-    //session expire after one week of inactivity
-    cookie: {maxAge: 7 * 24 * 60 * 60 * 1000} //1000 = milliseconds
-}))
-// end of setting up session 
+    cookie: { maxAge: 7 * 24 * 60 * 60 * 1000 }
+}));
 
-
-//Lwin Htoo Myat
-//define functions to check whether the user is already authenticated or not, if not redirect to the login page
+// Auth Middlewares
 const checkAuthenticated = (req, res, next) => {
     if (req.session.user) { 
-        next() // like continue in python
+        next();
     } else {
-        req.flash('error', 'Session Timed Out! Please Login again!') 
-        res.redirect('/login')
+        req.flash('error', 'Session Timed Out! Please Login again!');
+        res.redirect('/login');
     }
-}
+};
 
 const checkAdmin = (req, res, next) => {
-    if (req.session.user.role === 'admin'){  // all lowercase because we gave the user all lower case values in the registration form
-        next()
+    if (req.session.user && req.session.user.role === 'admin') {
+        next();
     } else {
-        req.flash('error', 'Access is Denied, If you are an Admin, Please use an Admin account to access this resource!')
-        res.redirect('/') // to be updated
+        req.flash('error', 'Access is Denied, If you are an Admin, Please use an Admin account to access this resource!');
+        res.redirect('/');
     }
-}
-
-
-//end of checking roles and sessions (LWIN HTOO MYAT)
-
-
-//
-/* start of homepage (LWIN HTOO MYAT)
-still have to implement the routing according to the logged in role
-maybe use if else statement to render different "home pages" based on the role
-if (req.session.user.role === 'admin'){
-  res.render('partials/admin_page', {user: req.session.user})
 };
-OR we can use if else statements inside the index.ejs itself, 
-which i think would be more efficient to implement, 
-bec of the fact that we will need less ejs files that way */
-app.get('/', (req, res) => {
-    res.render('partials/index', {user: req.session.user, error: req.flash('error'), success: req.flash('success')})
-}); 
-//end of homepage (LWIN HTOO MYAT)
 
-// Waitlist routes
-// The database creates the waitlist automatically: inserting the first waiting
-// row for a room/date/time-slot starts it.  The live schema uses is_waiting.
+// Check if user is Staff or Admin
+const checkStaffOrAdmin = (req, res, next) => {
+    if (req.session.user && (req.session.user.role === 'staff' || req.session.user.role === 'admin')) {
+        next();
+    } else {
+        req.flash('error', 'Access Denied: Staff or Admin permission required.');
+        res.redirect('/view-rooms');
+    }
+};
+
+// Homepage
+app.get('/', (req, res) => {
+    res.render('partials/index', { user: req.session.user, error: req.flash('error'), success: req.flash('success') });
+}); 
+
+// ==========================================
+// WAITLIST ROUTES (TEAMMATE FEATURE)
+// ==========================================
 const ACTIVE_WAITING_VALUE = '1';
 const ACTIVE_CANCELLED_VALUE = '0';
 const MAX_WAITLIST_SIZE = 3;
 
 const getWaitlistDetails = (source) => {
     const { room_id, booking_date, time_slot_id } = source;
-
-    if (!room_id || !booking_date || !time_slot_id) {
-        return null;
-    }
-
+    if (!room_id || !booking_date || !time_slot_id) return null;
     return { room_id, booking_date, time_slot_id };
 };
 
-// Show active entries. Staff can see all entries; employees can see only theirs.
 app.get('/view-waitlist', checkAuthenticated, (req, res) => {
     const canViewAllWaitlists = ['staff', 'admin'].includes(req.session.user.role);
     let sql = `
@@ -128,8 +115,6 @@ app.get('/view-waitlist', checkAuthenticated, (req, res) => {
     });
 });
 
-// Join a waitlist. The booking flow should call this only after it has found
-// that the requested room/slot is full.
 app.post('/join-waitlist', (req, res) => {
     const details = getWaitlistDetails(req.body);
     const email = req.session.user?.email || req.body.email;
@@ -193,7 +178,6 @@ app.post('/join-waitlist', (req, res) => {
     });
 });
 
-// Keep the row for audit/history, but remove it from the active waitlist.
 app.post('/cancel-waitlist', (req, res) => {
     const { waitlist_id } = req.body;
     const email = req.session.user?.email || req.body.email;
@@ -230,187 +214,230 @@ app.post('/cancel-waitlist', (req, res) => {
     });
 });
 
-//registration routes (LWIN HTOO MYAT)
+// ==========================================
+// REGISTRATION & AUTH ROUTES
+// ==========================================
 const validateRegistration = (req, res, next) => {
-    const {email, name, password, role} = req.body
+    const { email, name, password, role } = req.body;
 
-    if (!email || !name ||!password ||!role) {
-        req.flash('error', 'All Fields are required!')
-        req.flash('formData', req.body)
-        return res.send('All fields are required!')
+    if (!email || !name || !password || !role) {
+        req.flash('error', 'All Fields are required!');
+        req.flash('formData', req.body);
+        return res.send('All fields are required!');
     } 
 
     if (password.length < 8) {
-        req.flash('error', 'Password should be at least 8 characters!')
-        req.flash('formData', req.body)
-        return res.redirect('/register')
+        req.flash('error', 'Password should be at least 8 characters!');
+        req.flash('formData', req.body);
+        return res.redirect('/register');
     }
 
-    next()
-}
+    next();
+};
 
-app.get('/register', (req, res) => { //we are passing in message: req.flash etc... to keep the data and rediret the user to the register page with the form data
-    res.render('registration_page', 
-    {message: req.flash('error'), formData: req.flash('formData')})
+app.get('/register', (req, res) => {
+    res.render('registration_page', { message: req.flash('error'), formData: req.flash('formData') });
 });
 
 app.post('/register', validateRegistration, (req, res) => {
-    const { email, name, password, role } = req.body
-    const created_time = new Date() // Use JavaScript Date instead of now()
+    const { email, name, password, role } = req.body;
+    const created_time = new Date();
     
-    // First check if email already exists
-    const checkSql = 'SELECT email FROM users WHERE email = ?'
+    const checkSql = 'SELECT email FROM users WHERE email = ?';
     db.query(checkSql, [email], (checkError, checkResults) => {
-        if (checkError) throw checkError
+        if (checkError) throw checkError;
         
         if (checkResults.length > 0) {
-            req.flash('error', 'Email already registered!')
-            return res.redirect('/register')
+            req.flash('error', 'Email already registered!');
+            return res.redirect('/register');
         }
         
-        const sql = 'INSERT INTO users (email, name, password, role, created_at) VALUES (?,?,SHA1(?),?,?)'
+        const sql = 'INSERT INTO users (email, name, password, role, created_at) VALUES (?,?,SHA1(?),?,?)';
         db.query(sql, [email, name, password, role, created_time], (error, results) => {
-            if (error) throw error
-            console.log(results)
-            req.flash('success', 'Registration successful! Please log in.')
-            res.redirect('/login')
-        })
-    })
-})
-//end of registration routes (LWIN HTOO MYAT)
+            if (error) throw error;
+            req.flash('success', 'Registration successful! Please log in.');
+            res.redirect('/login');
+        });
+    });
+});
 
+app.get('/request-admin_access', checkAuthenticated, (req, res) => {
+    res.render('request_admin_access_form', { user: req.session.user });
+});
 
-//start of requesting admin access (LWIN HTOO MYAT)
-app.get('/request-admin_access',checkAuthenticated, (req, res)=>{
-    res.render('request_admin_access_form', {user: req.session.user})
-})
-
-app.post('/request-admin_access',checkAuthenticated, (req, res) =>{
-    const reason = req.body.reason
-
-    const sql = 'INSERT INTO admin_requests (reason, email, status, requested_at) VALUES (?, ?, "pending", NOW())'
-    db.query(sql, [reason, req.session.user.email], (error, results)=>{
-        if (error){
-            throw error
+app.post('/request-admin_access', checkAuthenticated, (req, res) => {
+    const reason = req.body.reason;
+    const sql = 'INSERT INTO admin_requests (reason, email, status, requested_at) VALUES (?, ?, "pending", NOW())';
+    db.query(sql, [reason, req.session.user.email], (error, results) => {
+        if (error) {
+            throw error;
         } else {
-            req.flash('success', 'The request has been successfully submitted.')
-            res.redirect('/', )
+            req.flash('success', 'The request has been successfully submitted.');
+            res.redirect('/');
         }
-    })
-})
-//end of requeseting admin  access (LWIN HTOO MYAT)
+    });
+});
 
-
-//start of the login routes (LWIN HTOO MYAT)
 app.get('/login', (req, res) => {
-    res.render('login_page', { message: req.flash('success'), error: req.flash('error') })
-})
+    res.render('login_page', { message: req.flash('success'), error: req.flash('error') });
+});
 
-
-app.post('/login', (req,res)=>{
-    const {email, password} = req.body
-    const sql = "SELECT * FROM users WHERE email = ? AND password = SHA1(?)"
+app.post('/login', (req, res) => {
+    const { email, password } = req.body;
+    const sql = "SELECT * FROM users WHERE email = ? AND password = SHA1(?)";
 
     if (!email || !password) {
-        req.flash('error', 'All field are required!')
-        res.redirect('/login')
-    };
+        req.flash('error', 'All field are required!');
+        res.redirect('/login');
+    }
 
     db.query(sql, [email, password], (error, results) => {
-        if (error) {
-            throw error
-        } 
-        if (results.length > 0) { // if there is a user with the valid credentials inside the database store them in the req.session.user
-            req.session.user = results[0] // results[0] because "results" itself is an array, it not later have to access req.session.user[0].role to check the role
-            req.flash('success', 'Login Successful!')
-            res.redirect('/') //to the main page
+        if (error) throw error;
+        
+        if (results.length > 0) {
+            req.session.user = results[0];
+            req.flash('success', 'Login Successful!');
+            res.redirect('/');
         } else {
-            // Invalid credentials
             req.flash('error', 'Invalid email or password.');
             res.redirect('/login');
         }
-    })
+    });
 });
 
-//end of the login routes (LWIN HTOO MYAT)
-
-
-//start of view_users route (LWIN HTOO MYAT)
-app.get('/view_users', checkAdmin, (req, res, next) => {
-    const sql = 'SELECT * FROM users'
-    db.query(sql, (error, results)=>{
-        if (error){
-            throw error
-        } else {
-            res.render('view_users', {user: req.session.user, users: results})
-        }
-    })
-})
-
-//end of view_users route
-
-
-//start of manage admin access requests route (LWIN HTOO MYAT)
-app.get('/manage_admin_access_requests', checkAdmin, (req, res) => {
-    const sql = 'SELECT * FROM admin_requests ORDER BY requested_at DESC'
+app.get('/view_users', checkAdmin, (req, res) => {
+    const sql = 'SELECT * FROM users';
     db.query(sql, (error, results) => {
-        if (error) {
-            throw error
-        } else {
-            res.render('manage_admin_access_requests', { user: req.session.user, requests: results }) //this aldy includes id
-        }
-    })
-})
+        if (error) throw error;
+        res.render('view_users', { user: req.session.user, users: results });
+    });
+});
+
+app.get('/manage_admin_access_requests', checkAdmin, (req, res) => {
+    const sql = 'SELECT * FROM admin_requests ORDER BY requested_at DESC';
+    db.query(sql, (error, results) => {
+        if (error) throw error;
+        res.render('manage_admin_access_requests', { user: req.session.user, requests: results });
+    });
+});
 
 app.post('/admin_access_requests/:id/approve', checkAdmin, (req, res) => {
-    const { id } = req.params
-    const reviewed_by = req.session.user.email
+    const { id } = req.params;
+    const reviewed_by = req.session.user.email;
     
-    // First get the email from the admin request
-    const getSql = 'SELECT email FROM admin_requests WHERE id = ?'
+    const getSql = 'SELECT email FROM admin_requests WHERE id = ?';
     db.query(getSql, [id], (getError, getResults) => {
-        if (getError) throw getError
-        
+        if (getError) throw getError;
         if (getResults.length === 0) {
-            req.flash('error', 'Request not found.')
-            return res.redirect('/manage_admin_access_requests')
+            req.flash('error', 'Request not found.');
+            return res.redirect('/manage_admin_access_requests');
         }
         
-        const requestEmail = getResults[0].email
+        const requestEmail = getResults[0].email;
+        const updateRequestSql = 'UPDATE admin_requests SET status = "approved", reviewed_at = NOW(), reviewed_by = ? WHERE id = ?';
         
-        // Update the admin_requests table
-        const updateRequestSql = 'UPDATE admin_requests SET status = "approved", reviewed_at = NOW(), reviewed_by = ? WHERE id = ?'
         db.query(updateRequestSql, [reviewed_by, id], (error, results) => {
-            if (error) throw error
-            
-            // Update the user's role in the users table
-            const updateUserSql = 'UPDATE users SET role = "admin" WHERE email = ?'
+            if (error) throw error;
+            const updateUserSql = 'UPDATE users SET role = "admin" WHERE email = ?';
             db.query(updateUserSql, [requestEmail], (userError, userResults) => {
-                if (userError) throw userError
-                
-                req.flash('success', 'Request has been approved.')
-                res.redirect('/manage_admin_access_requests')
-            })
-        })
-    })
-})
+                if (userError) throw userError;
+                req.flash('success', 'Request has been approved.');
+                res.redirect('/manage_admin_access_requests');
+            });
+        });
+    });
+});
 
 app.post('/admin_access_requests/:id/reject', checkAdmin, (req, res) => {
-    const { id } = req.params
-    const reviewed_by = req.session.user.email
-    const sql = 'UPDATE admin_requests SET status = "rejected", reviewed_at = NOW(), reviewed_by = ? WHERE id = ?'
+    const { id } = req.params;
+    const reviewed_by = req.session.user.email;
+    const sql = 'UPDATE admin_requests SET status = "rejected", reviewed_at = NOW(), reviewed_by = ? WHERE id = ?';
     db.query(sql, [reviewed_by, id], (error, results) => {
-        if (error) {
-            throw error
-        } else {
-            req.flash('success', 'Request has been rejected.')
-            res.redirect('/manage_admin_access_requests')
+        if (error) throw error;
+        req.flash('success', 'Request has been rejected.');
+        res.redirect('/manage_admin_access_requests');
+    });
+});
+
+// ==========================================
+// MEMBER 2: MANAGE ROOMS (FARIS)
+// ==========================================
+
+app.get('/dashboard', (req, res) => {
+    res.redirect('/view-rooms');
+});
+
+app.get('/view-rooms', checkAuthenticated, (req, res) => {
+    const sql = 'SELECT * FROM study_rooms';
+    
+    db.query(sql, (err, results) => {
+        if (err) {
+            console.error('Error fetching rooms:', err);
+            req.flash('error', 'Database error fetching rooms.');
+            return res.redirect('/');
         }
-    })
-})
-//end of manage admin access requests route (LWIN HTOO MYAT)
+        
+        res.render('view-rooms', { 
+            user: req.session.user, 
+            rooms: results,
+            success: req.flash('success'),
+            error: req.flash('error')
+        });
+    });
+});
 
+app.get('/add-room', checkAdmin, (req, res) => {
+    res.render('add-room', { 
+        user: req.session.user,
+        error: req.flash('error')
+    });
+});
 
-app.listen(3000, () => {
-    console.log('Server started on port 3000');
+app.post('/add-room', checkAdmin, (req, res) => {
+    const { room_id, room_name, capacity, has_whiteboard, has_projector } = req.body;
+
+    if (!room_id || !room_name || parseInt(capacity) <= 0) {
+        req.flash('error', 'Invalid Room ID, name, or capacity!');
+        return res.redirect('/add-room');
+    }
+
+    const sql = 'INSERT INTO study_rooms (room_id, room_name, capacity, has_whiteboard, has_projector) VALUES (?, ?, ?, ?, ?)';
+    
+    db.query(sql, [
+        room_id, 
+        room_name, 
+        capacity, 
+        has_whiteboard ? 1 : 0, 
+        has_projector ? 1 : 0
+    ], (err, result) => {
+        if (err) {
+            console.error('Error adding room:', err);
+            req.flash('error', 'Database error: Could not add room.');
+            return res.redirect('/add-room');
+        }
+
+        req.flash('success', `Room '${room_name}' added successfully!`);
+        res.redirect('/view-rooms');
+    });
+});
+
+app.post('/update-room-status', checkStaffOrAdmin, (req, res) => {
+    const { room_id, condition_status } = req.body;
+
+    const sql = 'UPDATE study_rooms SET condition_status = ? WHERE room_id = ?';
+    db.query(sql, [condition_status, room_id], (err, result) => {
+        if (err) {
+            console.error('Error updating status:', err);
+            req.flash('error', 'Database error: Could not update status.');
+            return res.redirect('/view-rooms');
+        }
+
+        req.flash('success', `Room status updated to '${condition_status}'!`);
+        res.redirect('/view-rooms');
+    });
+});
+
+const PORT = 3000;
+app.listen(PORT, () => {
+    console.log(`Server started at: http://localhost:${PORT}`);
 });

@@ -5,17 +5,28 @@
         <div class="navbar-nav ms-auto">
             <% if (user) { %>
                 <span class="nav-item nav-link text-muted">Welcome, <%= user.name %></span>
+
+                <!-- 1. Everyone sees Dashboard & Waitlist -->
+                <a class="nav-item nav-link text-primary" href="/view-rooms">Dashboard</a>
                 <a class="nav-item nav-link text-primary" href="/view-waitlist">View Waitlist</a>
+
+                <!-- 2. Admin and Staff see Add Room -->
+                <% if (user.role === 'admin' || user.role === 'staff') { %>
+                    <a class="nav-item nav-link text-primary fw-semibold" href="/add-room">+ Add Room</a>
+                <% } %>
+
+                <!-- 3. Admin links -->
                 <% if (user.role === 'admin') { %>
                     <a class="nav-item nav-link text-success" href="/view_users">View Users</a>
                     <a class="nav-item nav-link text-info" href="/manage_admin_access_requests">Admin Access Requests</a>
                 <% } else { %>
-                    <a class="nav-item nav-link text-primary" href="/dashboard">Dashboard</a>
+                    <!-- Non-admin links (Staff/Employee) -->
                     <% if (user.role === 'staff' || user.role === 'employee') { %>
                         <a class="nav-item nav-link text-warning" href="/request-admin_access">Request Admin Access</a>
                     <% } %>
                 <% } %>
-                <a class="nav-item nav-link text-danger" href="/login">Logout</a> <!-- no need to make another app.get for the logout, logout page is essentially a login page :) -->
+
+                <a class="nav-item nav-link text-danger" href="/login">Logout</a>
             <% } else { %>
                 <a class="nav-item nav-link" href="/login">Login</a>
                 <a class="nav-item nav-link text-primary" href="/register">Register</a>
