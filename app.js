@@ -274,9 +274,14 @@ const checkStaffOrAdmin = (req, res, next) => {
     }
 };
 
+// 0. Redirect /dashboard to /view-rooms so clicking Dashboard works
+app.get('/dashboard', (req, res) => {
+    res.redirect('/view-rooms');
+});
+
 // 1. GET: View all meeting rooms (Accessible to all logged-in users)
 app.get('/view-rooms', checkAuthenticated, (req, res) => {
-    const sql = 'SELECT * FROM rooms';
+    const sql = 'SELECT * FROM study_rooms';
     
     db.query(sql, (err, results) => {
         if (err) {
@@ -302,17 +307,24 @@ app.get('/add-room', checkAdmin, (req, res) => {
     });
 });
 
-// 2. POST: Admin adds a new meeting room (MySQL INSERT)
+// POST: Admin adds a new meeting room (MySQL INSERT into study_rooms)
 app.post('/add-room', checkAdmin, (req, res) => {
-    const { room_name, capacity } = req.body;
+    const { room_id, room_name, capacity, has_whiteboard, has_projector } = req.body;
 
-    if (!room_name || parseInt(capacity) <= 0) {
-        req.flash('error', 'Invalid room name or capacity!');
+    if (!room_id || !room_name || parseInt(capacity) <= 0) {
+        req.flash('error', 'Invalid Room ID, name, or capacity!');
         return res.redirect('/add-room');
     }
 
-    const sql = 'INSERT INTO rooms (room_name, capacity, condition_status) VALUES (?, ?, ?)';
-    db.query(sql, [room_name, capacity, 'Available'], (err, result) => {
+    const sql = 'INSERT INTO study_rooms (room_id, room_name, capacity, has_whiteboard, has_projector) VALUES (?, ?, ?, ?, ?)';
+    
+    db.query(sql, [
+        room_id, 
+        room_name, 
+        capacity, 
+        has_whiteboard ? 1 : 0, 
+        has_projector ? 1 : 0
+    ], (err, result) => {
         if (err) {
             console.error('Error adding room:', err);
             req.flash('error', 'Database error: Could not add room.');
@@ -324,11 +336,11 @@ app.post('/add-room', checkAdmin, (req, res) => {
     });
 });
 
-// 3. POST: Staff or Admin updates room status (MySQL UPDATE)
+// 3. POST: Staff or Admin updates room status (MySQL UPDATE on study_rooms)
 app.post('/update-room-status', checkStaffOrAdmin, (req, res) => {
     const { room_id, condition_status } = req.body;
 
-    const sql = 'UPDATE rooms SET condition_status = ? WHERE room_id = ?';
+    const sql = 'UPDATE study_rooms SET condition_status = ? WHERE room_id = ?';
     db.query(sql, [condition_status, room_id], (err, result) => {
         if (err) {
             console.error('Error updating status:', err);
@@ -341,6 +353,8 @@ app.post('/update-room-status', checkStaffOrAdmin, (req, res) => {
     });
 });
 
-app.listen(3000, () => {
-    console.log('Server started on port 3000');
+const PORT = 3000;
+
+app.listen(PORT, () => {
+    console.log(`Server started at: http://localhost:${PORT}`);
 });
