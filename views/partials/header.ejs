@@ -5,6 +5,7 @@
         <div class="navbar-nav ms-auto">
             <% if (user) { %>
                 <span class="nav-item nav-link text-muted">Welcome, <%= user.name %></span>
+                <a class="nav-item nav-link text-primary" href="/view-waitlist">View Waitlist</a>
                 <% if (user.role === 'admin') { %>
                     <a class="nav-item nav-link text-success" href="/view_users">View Users</a>
                     <a class="nav-item nav-link text-info" href="/manage_admin_access_requests">Admin Access Requests</a>

@@ -96,36 +96,35 @@ const getWaitlistDetails = (source) => {
     return { room_id, booking_date, time_slot_id };
 };
 
-// View only active entries for one room, date and time slot.
-app.get('/view-waitlist', (req, res) => {
-    const details = getWaitlistDetails(req.query);
-    if (!details) {
-        return res.status(400).json({ error: 'room_id, booking_date and time_slot_id are required.' });
-    }
-
-    const sql = `
+// Show active entries. Staff can see all entries; employees can see only theirs.
+app.get('/view-waitlist', checkAuthenticated, (req, res) => {
+    const canViewAllWaitlists = ['staff', 'admin'].includes(req.session.user.role);
+    let sql = `
         SELECT waitlist_id, waitlist_booking_date, time_slot_id, room_id, email
         FROM waiting_list
-        WHERE room_id = ?
-          AND DATE(waitlist_booking_date) = DATE(?)
-          AND time_slot_id = ?
-          AND is_waiting = ?
-          AND is_cancelled = ?
-        ORDER BY waitlist_id ASC`;
+        WHERE is_waiting = ?
+          AND is_cancelled = ?`;
+    const queryValues = [ACTIVE_WAITING_VALUE, ACTIVE_CANCELLED_VALUE];
 
-    db.query(sql, [
-        details.room_id,
-        details.booking_date,
-        details.time_slot_id,
-        ACTIVE_WAITING_VALUE,
-        ACTIVE_CANCELLED_VALUE
-    ], (error, rows) => {
+    if (!canViewAllWaitlists) {
+        sql += ' AND email = ?';
+        queryValues.push(req.session.user.email);
+    }
+
+    sql += ' ORDER BY waitlist_booking_date ASC, time_slot_id ASC, waitlist_id ASC';
+
+    db.query(sql, queryValues, (error, rows) => {
         if (error) {
             console.error('Unable to view waitlist:', error);
-            return res.status(500).json({ error: 'Unable to retrieve the waitlist.' });
+            req.flash('error', 'Unable to retrieve the waitlist.');
+            return res.redirect('/');
         }
 
-        res.json({ waitlist: rows });
+        res.render('view_waitlist', {
+            user: req.session.user,
+            waitlist: rows,
+            viewingAll: canViewAllWaitlists
+        });
     });
 });
 
