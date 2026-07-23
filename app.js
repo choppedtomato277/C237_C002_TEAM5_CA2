@@ -79,6 +79,157 @@ app.get('/', (req, res) => {
 }); 
 //end of homepage (LWIN HTOO MYAT)
 
+// Waitlist routes
+// The database creates the waitlist automatically: inserting the first waiting
+// row for a room/date/time-slot starts it.  The live schema uses is_waiting.
+const ACTIVE_WAITING_VALUE = '1';
+const ACTIVE_CANCELLED_VALUE = '0';
+const MAX_WAITLIST_SIZE = 3;
+
+const getWaitlistDetails = (source) => {
+    const { room_id, booking_date, time_slot_id } = source;
+
+    if (!room_id || !booking_date || !time_slot_id) {
+        return null;
+    }
+
+    return { room_id, booking_date, time_slot_id };
+};
+
+// View only active entries for one room, date and time slot.
+app.get('/view-waitlist', (req, res) => {
+    const details = getWaitlistDetails(req.query);
+    if (!details) {
+        return res.status(400).json({ error: 'room_id, booking_date and time_slot_id are required.' });
+    }
+
+    const sql = `
+        SELECT waitlist_id, waitlist_booking_date, time_slot_id, room_id, email
+        FROM waiting_list
+        WHERE room_id = ?
+          AND DATE(waitlist_booking_date) = DATE(?)
+          AND time_slot_id = ?
+          AND is_waiting = ?
+          AND is_cancelled = ?
+        ORDER BY waitlist_id ASC`;
+
+    db.query(sql, [
+        details.room_id,
+        details.booking_date,
+        details.time_slot_id,
+        ACTIVE_WAITING_VALUE,
+        ACTIVE_CANCELLED_VALUE
+    ], (error, rows) => {
+        if (error) {
+            console.error('Unable to view waitlist:', error);
+            return res.status(500).json({ error: 'Unable to retrieve the waitlist.' });
+        }
+
+        res.json({ waitlist: rows });
+    });
+});
+
+// Join a waitlist. The booking flow should call this only after it has found
+// that the requested room/slot is full.
+app.post('/join-waitlist', (req, res) => {
+    const details = getWaitlistDetails(req.body);
+    const email = req.session.user?.email || req.body.email;
+
+    if (!details || !email) {
+        return res.status(400).json({ error: 'room_id, booking_date, time_slot_id and email are required.' });
+    }
+
+    const activeWaitlistSql = `
+        SELECT waitlist_id, email
+        FROM waiting_list
+        WHERE room_id = ?
+          AND DATE(waitlist_booking_date) = DATE(?)
+          AND time_slot_id = ?
+          AND is_waiting = ?
+          AND is_cancelled = ?`;
+
+    db.query(activeWaitlistSql, [
+        details.room_id,
+        details.booking_date,
+        details.time_slot_id,
+        ACTIVE_WAITING_VALUE,
+        ACTIVE_CANCELLED_VALUE
+    ], (error, rows) => {
+        if (error) {
+            console.error('Unable to check waitlist:', error);
+            return res.status(500).json({ error: 'Unable to join the waitlist.' });
+        }
+
+        if (rows.some((row) => row.email === email)) {
+            return res.status(409).json({ error: 'You are already on this waitlist.' });
+        }
+
+        if (rows.length >= MAX_WAITLIST_SIZE) {
+            return res.status(409).json({ error: 'This waitlist is full (maximum 3 people).' });
+        }
+
+        const insertSql = `
+            INSERT INTO waiting_list
+                (waitlist_booking_date, time_slot_id, room_id, email, is_waiting, is_cancelled)
+            VALUES (?, ?, ?, ?, ?, ?)`;
+
+        db.query(insertSql, [
+            details.booking_date,
+            details.time_slot_id,
+            details.room_id,
+            email,
+            ACTIVE_WAITING_VALUE,
+            ACTIVE_CANCELLED_VALUE
+        ], (insertError, result) => {
+            if (insertError) {
+                console.error('Unable to join waitlist:', insertError);
+                return res.status(500).json({ error: 'Unable to join the waitlist.' });
+            }
+
+            res.status(201).json({
+                message: 'Joined the waitlist.',
+                waitlist_id: result.insertId
+            });
+        });
+    });
+});
+
+// Keep the row for audit/history, but remove it from the active waitlist.
+app.post('/cancel-waitlist', (req, res) => {
+    const { waitlist_id } = req.body;
+    const email = req.session.user?.email || req.body.email;
+
+    if (!waitlist_id || !email) {
+        return res.status(400).json({ error: 'waitlist_id and email are required.' });
+    }
+
+    const sql = `
+        UPDATE waiting_list
+        SET is_cancelled = ?
+        WHERE waitlist_id = ?
+          AND email = ?
+          AND is_waiting = ?
+          AND is_cancelled = ?`;
+
+    db.query(sql, [
+        '1',
+        waitlist_id,
+        email,
+        ACTIVE_WAITING_VALUE,
+        ACTIVE_CANCELLED_VALUE
+    ], (error, result) => {
+        if (error) {
+            console.error('Unable to cancel waitlist entry:', error);
+            return res.status(500).json({ error: 'Unable to cancel the waitlist entry.' });
+        }
+
+        if (result.affectedRows === 0) {
+            return res.status(404).json({ error: 'Active waitlist entry not found.' });
+        }
+
+        res.json({ message: 'Waitlist entry cancelled.' });
+    });
+});
 
 //registration routes (LWIN HTOO MYAT)
 const validateRegistration = (req, res, next) => {
