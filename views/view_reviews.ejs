@@ -180,12 +180,12 @@
                                     <td><%= review.review_date ? new Date(review.review_date).toISOString().slice(0, 10) : 'N/A' %></td>
                                     <td><%= review.review %></td>
                                     <td>
-                                        <% if (user && user.role === 'admin') { %>
+                                        <% if (user && (user.role === 'admin' || user.role === 'staff')) { %>
                                             <form action="/delete-review/<%= review.review_id %>" method="POST" style="display:inline;" onsubmit="return confirm('Are you sure you want to delete this review?');">
                                                 <button type="submit" class="btn-delete">Delete</button>
                                             </form>
                                         <% } else { %>
-                                            <span style="color: #999;">Admin only</span>
+                                            <span style="color: #999;">Staff/Admin only</span>
                                         <% } %>
                                     </td>
                                 </tr>

@@ -735,7 +735,7 @@ app.post('/review', (req, res) => {
     });
 });
 
-app.get('/view_reviews', checkStaffOrAdmin, (req, res) => {
+app.get('/view_reviews', checkAuthenticated, (req, res) => {
     const sql = `
         SELECT review_id, user_email, room_id, review_score, review, review_date
         FROM reviews
@@ -752,8 +752,8 @@ app.get('/view_reviews', checkStaffOrAdmin, (req, res) => {
     });
 });
 
-//delete reviews (only accessible to admins)
-app.post('/delete-review/:review_id', checkAdmin, (req, res) => {
+//delete reviews (accessible to staff and admins)
+app.post('/delete-review/:review_id', checkStaffOrAdmin, (req, res) => {
     const reviewId = decodeURIComponent(req.params.review_id);
     const deleteSql = 'DELETE FROM reviews WHERE review_id = ?';
     
