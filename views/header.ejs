@@ -1,0 +1,40 @@
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+<nav class="navbar navbar-expand-lg navbar-light bg-white border-bottom">
+    <div class="container">
+        <a class="navbar-brand fw-bold" href="/">Meeting Room Booking — C237_002_TEAM5_CA2</a>
+        <div class="navbar-nav ms-auto">
+            <% if (user) { %>
+                <span class="nav-item nav-link text-muted">Welcome, <%= user.name %></span>
+
+                <!-- Everyone sees Dashboard & Waitlist & Can submit a review -->
+                <a class="nav-item nav-link text-primary" href="/view-rooms">Rooms</a>
+                <a class="nav-item nav-link text-primary" href="/view-waitlist">View Waitlist</a>
+                <a class="nav-item nav-link text-primary" href="/review_form">Submit Reviews</a>
+
+                <!-- Admin only: Add Room -->
+                <% if (user.role === 'admin') { %>
+                    <a class="nav-item nav-link text-primary" href="/staff-dashboard">Flag Misuse</a>
+                    <a class="nav-item nav-link text-success" href="/view_users">Users</a>
+                    <a class="nav-item nav-link text-info" href="/manage_admin_access_requests">Admin Access Requests</a>
+                <% } %>
+
+                <!-- Staff only: Staff Dashboard -->
+                <% if (user.role === 'staff') { %>
+                    <a class="nav-item nav-link text-primary" href="/staff-dashboard">Flag Misuse</a>
+                    <a class="nav-item nav-link text-primary" href="/view_reviews">Reviews</a>
+                <% } %>
+
+                <!-- Employee only: My Bookings & Request Admin Access -->
+                <% if (user.role === 'employee') { %>
+                    <a class="nav-item nav-link text-primary" href="/my-bookings">My Bookings</a>
+                    <a class="nav-item nav-link text-warning" href="/request-admin_access">Request Admin Access</a>
+                <% } %>
+
+                <a class="nav-item nav-link text-danger" href="/logout">Logout</a>
+            <% } else { %>
+                <a class="nav-item nav-link" href="/login">Login</a>
+                <a class="nav-item nav-link text-primary" href="/register">Register</a>
+            <% } %>
+        </div>
+    </div>
+</nav>

@@ -665,6 +665,70 @@ app.post('/update-room-status', checkStaffOrAdmin, (req, res) => {
     });
 });
 
+
+
+// ==========================================
+// MEMBER 4: REVIEWS AND ANNOUCMENTS (ELISHA)
+// ==========================================
+
+
+
+app.get('/review_form', (req, res) => {
+    res.render('review_form', {
+        user: req.session.user,
+        error: req.flash('error'),
+        success: req.flash('success')
+    });
+});
+
+app.post('/review', (req, res) => {
+    if (!req.session.user) {
+        req.flash('error', 'Please log in to submit a review.');
+        return res.redirect('/login');
+    }
+
+    const { score, review } = req.body;
+    const user_email = req.session.user.email;
+    const room_id = req.body.room_id || 'N/A';
+
+    if (!score || !review || review.trim() === '') {
+        req.flash('error', 'Please provide a rating and a review.');
+        return res.redirect('/review_form');
+    }
+
+    const sql = 'INSERT INTO reviews (user_email, room_id, review_score, review) VALUES (?, ?, ?, ?)';
+
+    db.query(sql, [user_email, room_id, score, review.trim()], (error) => {
+        if (error) {
+            console.error('Error saving review:', error);
+            req.flash('error', 'Unable to save your review right now.');
+            return res.redirect('/review_form');
+        }
+
+        req.flash('success', 'Review submitted successfully!');
+        res.redirect('/review_form');
+    });
+});
+
+app.get('/view_reviews', (req, res) => {
+    const sql = `
+        SELECT review_id, user_email, room_id, review_score, review
+        FROM reviews
+        ORDER BY review_id DESC
+    `;
+
+    db.query(sql, (error, results) => {
+        if (error) {
+            console.error('Error loading reviews:', error);
+            return res.status(500).send('Unable to load reviews.');
+        }
+
+        res.render('view_reviews', { user: req.session.user, reviews: results });
+    });
+});
+
+
+
 const PORT = 3000;
 app.listen(PORT, () => {
     console.log(`Server started at: http://localhost:${PORT}`);
