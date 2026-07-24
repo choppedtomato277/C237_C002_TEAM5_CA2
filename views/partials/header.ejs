@@ -6,16 +6,13 @@
             <% if (user) { %>
                 <span class="nav-item nav-link text-muted">Welcome, <%= user.name %></span>
 
-                <!-- Everyone sees Dashboard & Waitlist & Can submit a review -->
+                <!-- Everyone sees Dashboard & Can submit a review -->
                 <a class="nav-item nav-link text-primary" href="/view-rooms">Rooms</a>
-                <a class="nav-item nav-link text-primary" href="/view-waitlist">View Waitlist</a>
                 <a class="nav-item nav-link text-primary" href="/review_form">Submit Reviews</a>
 
-                <!-- Admin only: Add Room -->
+                <!-- Admin only: Flag Misuse -->
                 <% if (user.role === 'admin') { %>
                     <a class="nav-item nav-link text-primary" href="/staff-dashboard">Flag Misuse</a>
-                    <a class="nav-item nav-link text-success" href="/view_users">Users</a>
-                    <a class="nav-item nav-link text-info" href="/manage_admin_access_requests">Admin Access Requests</a>
                 <% } %>
 
                 <!-- Staff only: Staff Dashboard -->
@@ -24,10 +21,9 @@
                     <a class="nav-item nav-link text-primary" href="/view_reviews">Reviews</a>
                 <% } %>
 
-                <!-- Employee only: My Bookings & Request Admin Access -->
+                <!-- Employee only -->
                 <% if (user.role === 'employee') { %>
-                    <a class="nav-item nav-link text-primary" href="/my-bookings">My Bookings</a>
-                    <a class="nav-item nav-link text-warning" href="/request-admin_access">Request Admin Access</a>
+                    <!-- My Bookings & Request Admin Access available in Quick Links on homepage -->
                 <% } %>
 
                 <a class="nav-item nav-link text-danger" href="/logout">Logout</a>
