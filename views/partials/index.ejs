@@ -33,51 +33,64 @@
 <div class="bg-light py-4">
     <div class="container">
         <h2 class="text-center mb-4">Quick Links</h2>
+        <!-- KHOON YONG - START -->
         <div class="row g-3 justify-content-center">
             <% if (user.role === 'admin' || user.role === 'staff') { %>
                 <div class="col-auto">
-                    <a href="/staff-dashboard" class="btn btn-outline-primary">Flag Misuse</a>
+                    <a href="/staff-dashboard" class="btn btn-outline-dark rounded-pill px-4 py-2">Flag Misuse</a>
+                </div>
+                <div class="col-auto">
+                    <a href="/view-waitlist" class="btn btn-outline-dark rounded-pill px-4 py-2">Manage Waitlist</a>
                 </div>
             <% } %>
             <% if (user.role === 'admin') { %>
                 <div class="col-auto">
-                    <a href="/view_users" class="btn btn-outline-success">Manage Users</a>
+                    <a href="/view_users" class="btn btn-outline-dark rounded-pill px-4 py-2">Manage Users</a>
                 </div>
                 <div class="col-auto">
-                    <a href="/manage_admin_access_requests" class="btn btn-outline-info">Admin Requests</a>
+                    <a href="/manage_admin_access_requests" class="btn btn-outline-dark rounded-pill px-4 py-2">Admin Requests</a>
                 </div>
                 <div class="col-auto">
-                    <a href="/view-rooms" class="btn btn-outline-secondary">Manage Rooms</a>
+                    <a href="/view-rooms" class="btn btn-outline-dark rounded-pill px-4 py-2">Manage Rooms</a>
                 </div>
             <% } %>
             <% if (user.role === 'staff') { %>
                 <div class="col-auto">
-                    <a href="/daily-schedule" class="btn btn-outline-primary">Today's Schedule</a>
+                    <a href="/daily-schedule" class="btn btn-outline-dark rounded-pill px-4 py-2">Today's Schedule</a>
                 </div>
                 <div class="col-auto">
-                    <a href="/review_form" class="btn btn-outline-primary">Submit a review</a>
+                    <a href="/review_form" class="btn btn-outline-dark rounded-pill px-4 py-2">Submit a review</a>
                 </div>
             <% } %>
             <% if (user.role === 'employee') { %>
                 <div class="col-auto">
-                    <a href="/my-bookings" class="btn btn-outline-primary">My Bookings</a>
+                    <a href="/my-bookings" class="btn btn-outline-dark rounded-pill px-4 py-2">My Bookings</a>
                 </div>
                 <div class="col-auto">
-                    <a href="/request-admin_access" class="btn btn-outline-warning">Request Admin</a>
+                    <a href="/request-admin_access" class="btn btn-outline-dark rounded-pill px-4 py-2">Request Admin</a>
                 </div>
                 <div class="col-auto">
-                    <a href="/review_form" class="btn btn-outline-primary">Submit a review</a>
+                    <a href="/review_form" class="btn btn-outline-dark rounded-pill px-4 py-2">Submit a review</a>
+                </div>
+                <div class="col-auto">
+                    <a href="/create-waitlist" class="btn btn-outline-dark rounded-pill px-4 py-2">Join Waitlist</a>
+                </div>
+            <% } %>
+            <% if (user.role === 'staff') { %>
+                <div class="col-auto">
+                    <a href="/create-waitlist" class="btn btn-outline-dark rounded-pill px-4 py-2">Join Waitlist</a>
                 </div>
             <% } %>
             <div class="col-auto">
-                    <a href="/view_reviews" class="btn btn-outline-primary">View reviews</a>
+                    <a href="/view_reviews" class="btn btn-outline-dark rounded-pill px-4 py-2">View reviews</a>
                 </div>
             <div class="col-auto">
-                <a href="/view-waitlist" class="btn btn-outline-secondary">Waitlist</a>
+                <a href="/view-waitlist" class="btn btn-outline-dark rounded-pill px-4 py-2">Waitlist</a>
             </div>
         </div>
     </div>
 </div>
+<!-- KHOON YONG - END -->
 <% } %>
 
 <!-- How It Works -->

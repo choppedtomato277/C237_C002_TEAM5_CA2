@@ -83,7 +83,7 @@ app.get('/', (req, res) => {
 
 
 // ==========================================
-// WAITLIST ROUTES (KHOON YONG)
+// WAITLIST ROUTES (KHOON YONG) - START
 // ==========================================
 const ACTIVE_WAITING_VALUE = '1';
 const ACTIVE_CANCELLED_VALUE = '0';
@@ -224,7 +224,129 @@ app.post('/cancel-waitlist', (req, res) => {
         res.json({ message: 'Waitlist entry cancelled.' });
     });
 });
-// END OF KHOON YONG'S CODE
+
+// GET /create-waitlist - Show the waitlist join form
+app.get('/create-waitlist', checkAuthenticated, (req, res) => {
+    if (req.session.user.role === 'admin') {
+        req.flash('error', 'Admins cannot join waitlists.');
+        return res.redirect('/view-waitlist');
+    }
+    
+    db.query("SELECT * FROM study_rooms", (error, rooms) => {
+        if (error) {
+            console.error('Database query error:', error.message);
+            return res.send('Error loading rooms');
+        }
+        res.render('create-waitlist', {
+            rooms: rooms,
+            user: req.session.user,
+            error: req.flash('error'),
+            success: req.flash('success')
+        });
+    });
+});
+
+// POST /create-waitlist - Employee joins a waitlist
+app.post('/create-waitlist', checkAuthenticated, (req, res) => {
+    if (req.session.user.role === 'admin') {
+        req.flash('error', 'Admins cannot join waitlists.');
+        return res.redirect('/create-waitlist');
+    }
+
+    const { booking_date, time_slot_id, room_id } = req.body;
+    const email = req.session.user.email;
+
+    if (!booking_date || !time_slot_id || !room_id) {
+        req.flash('error', 'All fields are required.');
+        return res.redirect('/create-waitlist');
+    }
+
+    // Check if already on waitlist
+    const checkWaitlistSql = `
+        SELECT waitlist_id
+        FROM waiting_list
+        WHERE room_id = ?
+          AND DATE(waitlist_booking_date) = DATE(?)
+          AND time_slot_id = ?
+          AND email = ?
+          AND is_waiting = ?
+          AND is_cancelled = ?`;
+
+    db.query(checkWaitlistSql, [
+        room_id,
+        booking_date,
+        time_slot_id,
+        email,
+        ACTIVE_WAITING_VALUE,
+        ACTIVE_CANCELLED_VALUE
+    ], (error, rows) => {
+        if (error) {
+            console.error('Error checking waitlist:', error);
+            req.flash('error', 'Unable to join the waitlist.');
+            return res.redirect('/create-waitlist');
+        }
+
+        if (rows.length > 0) {
+            req.flash('error', 'You are already on this waitlist.');
+            return res.redirect('/create-waitlist');
+        }
+
+        // Check waitlist size limit
+        const checkSizeSql = `
+            SELECT waitlist_id
+            FROM waiting_list
+            WHERE room_id = ?
+              AND DATE(waitlist_booking_date) = DATE(?)
+              AND time_slot_id = ?
+              AND is_waiting = ?
+              AND is_cancelled = ?`;
+
+        db.query(checkSizeSql, [
+            room_id,
+            booking_date,
+            time_slot_id,
+            ACTIVE_WAITING_VALUE,
+            ACTIVE_CANCELLED_VALUE
+        ], (sizeError, waitlistRows) => {
+            if (sizeError) {
+                console.error('Error checking waitlist size:', sizeError);
+                req.flash('error', 'Unable to join the waitlist.');
+                return res.redirect('/create-waitlist');
+            }
+
+            if (waitlistRows.length >= MAX_WAITLIST_SIZE) {
+                req.flash('error', 'This waitlist is full (maximum 3 people).');
+                return res.redirect('/create-waitlist');
+            }
+
+            // Insert into waitlist
+            const insertSql = `
+                INSERT INTO waiting_list
+                    (waitlist_booking_date, time_slot_id, room_id, email, is_waiting, is_cancelled)
+                VALUES (?, ?, ?, ?, ?, ?)`;
+
+            db.query(insertSql, [
+                booking_date,
+                time_slot_id,
+                room_id,
+                email,
+                ACTIVE_WAITING_VALUE,
+                ACTIVE_CANCELLED_VALUE
+            ], (insertError, result) => {
+                if (insertError) {
+                    console.error('Error joining waitlist:', insertError);
+                    req.flash('error', 'Unable to join the waitlist.');
+                    return res.redirect('/create-waitlist');
+                }
+
+                req.flash('success', 'Successfully joined the waitlist!');
+                res.redirect('/view-waitlist');
+            });
+        });
+    });
+});
+// END OF WAITLIST ROUTES (KHOON YONG)
+// ==========================================
 
 // ==========================================
 // REGISTRATION & AUTH ROUTES

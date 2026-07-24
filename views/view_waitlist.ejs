@@ -1,3 +1,4 @@
+<!-- KHOON YONG - START -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -17,7 +18,12 @@
                     <%= viewingAll ? 'All active waitlist entries.' : 'Your active waitlist entries.' %>
                 </p>
             </div>
-            <span class="badge text-bg-primary rounded-pill"><%= waitlist.length %> active</span>
+            <div class="d-flex gap-2 align-items-center">
+                <% if (user.role === 'employee' || user.role === 'staff') { %>
+                    <a href="/create-waitlist" class="btn btn-primary">Join Waitlist</a>
+                <% } %>
+                <span class="badge text-bg-primary rounded-pill"><%= waitlist.length %> active</span>
+            </div>
         </div>
 
         <% if (waitlist.length === 0) { %>
@@ -32,6 +38,7 @@
                             <th scope="col">Time Slot</th>
                             <% if (viewingAll) { %><th scope="col">Employee</th><% } %>
                             <th scope="col">Waitlist ID</th>
+                            <% if (!viewingAll) { %><th scope="col">Action</th><% } %>
                         </tr>
                     </thead>
                     <tbody>
@@ -42,6 +49,14 @@
                                 <td><%= entry.time_slot_id %></td>
                                 <% if (viewingAll) { %><td><%= entry.email %></td><% } %>
                                 <td><%= entry.waitlist_id %></td>
+                                <% if (!viewingAll) { %>
+                                <td>
+                                    <button class="btn btn-sm btn-danger cancel-waitlist-btn" 
+                                            data-waitlist-id="<%= entry.waitlist_id %>">
+                                        Cancel
+                                    </button>
+                                </td>
+                                <% } %>
                             </tr>
                         <% }) %>
                     </tbody>
@@ -49,5 +64,41 @@
             </div>
         <% } %>
     </main>
+
+    <script>
+        // Cancel waitlist functionality
+        document.querySelectorAll('.cancel-waitlist-btn').forEach(button => {
+            button.addEventListener('click', async function() {
+                if (!confirm('Are you sure you want to cancel this waitlist entry?')) {
+                    return;
+                }
+                
+                const waitlistId = this.dataset.waitlistId;
+                
+                try {
+                    const response = await fetch('/cancel-waitlist', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({ waitlist_id: waitlistId })
+                    });
+                    
+                    const data = await response.json();
+                    
+                    if (response.ok) {
+                        alert('Waitlist entry cancelled successfully.');
+                        location.reload();
+                    } else {
+                        alert(data.error || 'Failed to cancel waitlist entry.');
+                    }
+                } catch (error) {
+                    console.error('Error:', error);
+                    alert('An error occurred while cancelling.');
+                }
+            });
+        });
+    </script>
 </body>
 </html>
+<!-- KHOON YONG - END -->
