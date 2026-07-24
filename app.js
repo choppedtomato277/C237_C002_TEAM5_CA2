@@ -76,12 +76,7 @@ const checkStaffOrAdmin = (req, res, next) => {
 };
 // END OF AUTH MIDDLEWARES LWIN HTOO MYAT
 
-<<<<<<< HEAD
 // Homepage LWIN HTOO MYAT
-=======
-
-// Homepage
->>>>>>> 7c7d1c2ce71a859b09177673f31c12c2aaaf5446
 app.get('/', (req, res) => {
     res.render('partials/index', { user: req.session.user, error: req.flash('error'), success: req.flash('success') });
 }); 
