@@ -206,13 +206,13 @@
         function updatePlaceholder() {
             const field = filterField.value;
             if (field === 'user_email') {
-                filterInput.placeholder = 'Search user_email';
+                filterInput.placeholder = 'Search user email (exact)';
             } else if (field === 'room_id') {
-                filterInput.placeholder = 'Search room_id';
+                filterInput.placeholder = 'Search room id (exact)';
             } else if (field === 'review_date') {
-                filterInput.placeholder = 'Search review_date (YYYY-MM-DD)';
+                filterInput.placeholder = 'Search review date (YYYY-MM-DD)';
             } else {
-                filterInput.placeholder = 'Search review_score (exact)';
+                filterInput.placeholder = 'Search review score (exact)';
             }
         }
 
