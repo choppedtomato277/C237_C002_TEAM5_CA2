@@ -8,7 +8,6 @@
 
                 <!-- Everyone sees Dashboard & Can submit a review -->
                 <a class="nav-item nav-link text-primary" href="/view-rooms">Rooms</a>
-                <a class="nav-item nav-link text-primary" href="/review_form">Submit Reviews</a>
 
                 <!-- Admin only: Flag Misuse -->
                 <% if (user.role === 'admin') { %>
@@ -23,6 +22,7 @@
 
                 <!-- Employee only -->
                 <% if (user.role === 'employee') { %>
+                    <a class="nav-item nav-link text-primary" href="/review_form">Submit Reviews</a>
                     <!-- My Bookings & Request Admin Access available in Quick Links on homepage -->
                 <% } %>
 
