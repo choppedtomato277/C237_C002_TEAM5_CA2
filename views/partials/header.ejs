@@ -6,18 +6,19 @@
             <% if (user) { %>
                 <span class="nav-item nav-link text-muted">Welcome, <%= user.name %></span>
 
-                <!-- Everyone sees Dashboard & Can submit a review -->
-                <a class="nav-item nav-link text-primary" href="/view-rooms">Rooms</a>
+                
 
                 <!-- Admin only: Flag Misuse -->
                 <% if (user.role === 'admin') { %>
                     <a class="nav-item nav-link text-primary" href="/staff-dashboard">Flag Misuse</a>
+                    <a class="nav-item nav-link text-primary" href="/view-rooms">Rooms</a>
                 <% } %>
 
                 <!-- Staff only: Staff Dashboard -->
                 <% if (user.role === 'staff') { %>
                     <a class="nav-item nav-link text-primary" href="/staff-dashboard">Flag Misuse</a>
                     <a class="nav-item nav-link text-primary" href="/view_reviews">Reviews</a>
+                    <a class="nav-item nav-link text-primary" href="/view-rooms">Rooms</a>
                 <% } %>
 
                 <!-- Employee only -->

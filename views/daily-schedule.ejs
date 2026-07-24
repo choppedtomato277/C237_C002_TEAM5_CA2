@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Today's Schedule - Study Room Booking</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="bg-light">
+    <div class="container py-5">
+        <div class="card shadow">
+            <div class="card-body p-4">
+
+                <div class="d-flex gap-2 mb-4">
+                    <a href="/manage-bookings" class="btn btn-outline-secondary btn-sm">Dashboard</a>
+                    <a href="/daily-schedule" class="btn btn-outline-secondary btn-sm">Today's Schedule</a>
+                    <a href="/create-booking" class="btn btn-outline-secondary btn-sm">New Booking</a>
+                </div>
+
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h2 class="mb-0">Today's Bookings</h2>
+                    <a href="/create-booking" class="btn btn-primary">+ New Booking</a>
+                </div>
+                <p class="text-muted">Logged in as: <strong><%= user.name %></strong> (<%= user.role %>)</p>
+
+                <% if (message && message.length > 0) { %>
+                    <div class="alert alert-success"><%= message[0] %></div>
+                <% } %>
+                <% if (error && error.length > 0) { %>
+                    <div class="alert alert-danger"><%= error[0] %></div>
+                <% } %>
+
+                <% 
+                    const slots = {
+                        1: '9am - 10am', 2: '10am - 11am', 3: '11am - 12pm', 4: '12pm - 1pm',
+                        5: '1pm - 2pm', 6: '2pm - 3pm', 7: '3pm - 4pm', 8: '4pm - 5pm',
+                        9: '5pm - 6pm', 10: '6pm - 7pm', 11: '7pm - 8pm'
+                    };
+                %>
+
+                <% if (bookings.length === 0) { %>
+                    <p class="text-center text-muted py-4">No bookings for today.</p>
+                <% } else { %>
+                    <p class="text-muted small">Click a Booking ID to view full details.</p>
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Booking ID</th>
+                                    <th>Time Slot</th>
+                                    <th>Room</th>
+                                    <th>Booked By</th>
+                                    <th>Status</th>
+                                    <% if (user.role === 'staff') { %><th>Action</th><% } %>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <% bookings.forEach(function(b) { %>
+                                    <tr>
+                                        <td><a href="/booking/<%= b.booking_id %>"><%= b.booking_id %></a></td>
+                                        <td><%= slots[b.time_slot_id] || b.time_slot_id %></td>
+                                        <td><%= b.room_name %></td>
+                                        <td><%= b.booked_by %></td>
+                                        <td>
+                                            <% if (b.status === 'confirmed') { %>
+                                                <span class="badge bg-success">Confirmed</span>
+                                            <% } else if (b.status === 'no-show') { %>
+                                                <span class="badge bg-danger">No-Show</span>
+                                            <% } else { %>
+                                                <span class="badge bg-secondary"><%= b.status %></span>
+                                            <% } %>
+                                        </td>
+                                        <% if (user.role === 'staff') { %>
+                                            <td>
+                                                <% if (b.status === 'confirmed') { %>
+                                                    <form method="POST" action="/mark-no-show" class="mb-0">
+                                                        <input type="hidden" name="booking_id" value="<%= b.booking_id %>">
+                                                        <button type="submit" class="btn btn-sm btn-outline-danger">Mark No-Show</button>
+                                                    </form>
+                                                <% } %>
+                                            </td>
+                                        <% } %>
+                                    </tr>
+                                <% }); %>
+                            </tbody>
+                        </table>
+                    </div>
+                <% } %>
+
+                <div class="text-center mt-3">
+                    <a href="/">← Back to home</a>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
