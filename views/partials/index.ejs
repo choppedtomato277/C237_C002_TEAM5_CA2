@@ -1,7 +1,101 @@
 <%- include('header') %>
+
 <% if (error && error.length > 0) { %>
-    <div class="alert alert-danger text-center mt -5"><%= error[0] %></div>
+    <div class="alert alert-danger text-center mt-3"><%= error[0] %></div>
 <% } %>
 <% if (success && success.length > 0) { %>
-    <div class="alert alert-success text-center mt-5"><%= success[0] %></div>
+    <div class="alert alert-success text-center mt-3"><%= success[0] %></div>
 <% } %>
+
+<!-- Hero Section -->
+<div class="bg-primary text-white text-center py-5">
+    <div class="container">
+        <h1 class="display-4 fw-bold">Study Room Booking System</h1>
+        <p class="lead mb-4">Book study rooms at Republic Polytechnic easily and efficiently</p>
+        <% if (!user) { %>
+            <a href="/register" class="btn btn-light btn-lg">Get Started</a>
+            <a href="/login" class="btn btn-outline-light btn-lg ms-2">Login</a>
+        <% } else if (user.role === 'admin') { %>
+            <a href="/view_users" class="btn btn-light btn-lg">Manage Users</a>
+            <a href="/manage_admin_access_requests" class="btn btn-outline-light btn-lg ms-2">Admin Requests</a>
+        <% } else if (user.role === 'staff') { %>
+            <a href="/staff-dashboard" class="btn btn-light btn-lg">Staff Dashboard</a>
+            <a href="/view-rooms" class="btn btn-outline-light btn-lg ms-2">View Rooms</a>
+        <% } else { %>
+            <a href="/view-rooms" class="btn btn-light btn-lg">Book a Room</a>
+            <a href="/my-bookings" class="btn btn-outline-light btn-lg ms-2">My Bookings</a>
+        <% } %>
+    </div>
+</div>
+
+<!-- Quick Links (for logged in users) -->
+<% if (user) { %>
+<div class="bg-light py-4">
+    <div class="container">
+        <h2 class="text-center mb-4">Quick Links</h2>
+        <div class="row g-3 justify-content-center">
+            <% if (user.role === 'admin' || user.role === 'staff') { %>
+                <div class="col-auto">
+                    <a href="/staff-dashboard" class="btn btn-outline-primary">Flag Misuse</a>
+                </div>
+            <% } %>
+            <% if (user.role === 'admin') { %>
+                <div class="col-auto">
+                    <a href="/view_users" class="btn btn-outline-success">Manage Users</a>
+                </div>
+                <div class="col-auto">
+                    <a href="/manage_admin_access_requests" class="btn btn-outline-info">Admin Requests</a>
+                </div>
+            <% } %>
+            <% if (user.role === 'employee') { %>
+                <div class="col-auto">
+                    <a href="/my-bookings" class="btn btn-outline-primary">My Bookings</a>
+                </div>
+                <div class="col-auto">
+                    <a href="/request-admin_access" class="btn btn-outline-warning">Request Admin</a>
+                </div>
+            <% } %>
+            <div class="col-auto">
+                <a href="/view-rooms" class="btn btn-outline-secondary">Available Rooms</a>
+            </div>
+            <div class="col-auto">
+                <a href="/view-waitlist" class="btn btn-outline-secondary">Waitlist</a>
+            </div>
+        </div>
+    </div>
+</div>
+<% } %>
+
+<!-- How It Works -->
+<div class="container py-5">
+    <h2 class="text-center mb-4">How It Works</h2>
+    <div class="row g-4">
+        <div class="col-md-4">
+            <div class="card h-100 text-center border-0 shadow-sm">
+                <div class="card-body">
+                    <h2 class="mb-3">Find</h2>
+                    <h5 class="card-title">Find a Room</h5>
+                    <p class="card-text text-muted">Browse available study rooms and check real-time availability</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card h-100 text-center border-0 shadow-sm">
+                <div class="card-body">
+                    <h2 class="mb-3">Book</h2>
+                    <h5 class="card-title">Book Online</h5>
+                    <p class="card-text text-muted">Reserve your preferred time slot with just a few clicks</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card h-100 text-center border-0 shadow-sm">
+                <div class="card-body">
+                    <h2 class="mb-3">Wait</h2>
+                    <h5 class="card-title">Join Waitlist</h5>
+                    <p class="card-text text-muted">Get notified when a slot becomes available</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
