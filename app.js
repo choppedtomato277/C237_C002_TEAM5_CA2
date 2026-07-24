@@ -309,9 +309,9 @@ app.post('/login', (req, res) => {
             req.flash('success', 'Login Successful!');
             // Redirect based on user role
             if (req.session.user.role === 'employee') {
-                res.redirect('/my-bookings');
+                res.redirect('/');
             } else if (req.session.user.role === 'staff') {
-                res.redirect('/staff-dashboard');
+                res.redirect('/');
             } else {
                 res.redirect('/');
             }

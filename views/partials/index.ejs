@@ -10,8 +10,8 @@
 <!-- Hero Section -->
 <div class="bg-primary text-white text-center py-5">
     <div class="container">
-        <h1 class="display-4 fw-bold">Study Room Booking System</h1>
-        <p class="lead mb-4">Book study rooms at Republic Polytechnic easily and efficiently</p>
+        <h1 class="display-4 fw-bold">Meeting Room Booking System</h1>
+        <p class="lead mb-4">Book meeting rooms Bookit easily and efficiently</p>
         <% if (!user) { %>
             <a href="/register" class="btn btn-light btn-lg">Get Started</a>
             <a href="/login" class="btn btn-outline-light btn-lg ms-2">Login</a>
@@ -19,7 +19,7 @@
             <a href="/view_users" class="btn btn-light btn-lg">Manage Users</a>
             <a href="/manage_admin_access_requests" class="btn btn-outline-light btn-lg ms-2">Admin Requests</a>
         <% } else if (user.role === 'staff') { %>
-            <a href="/staff-dashboard" class="btn btn-light btn-lg">Staff Dashboard</a>
+            <a href="/staff-dashboard" class="btn btn-light btn-lg">Flag Misuse</a>
             <a href="/view-rooms" class="btn btn-outline-light btn-lg ms-2">View Rooms</a>
         <% } else { %>
             <a href="/view-rooms" class="btn btn-light btn-lg">Book a Room</a>
@@ -46,6 +46,9 @@
                 <div class="col-auto">
                     <a href="/manage_admin_access_requests" class="btn btn-outline-info">Admin Requests</a>
                 </div>
+                <div class="col-auto">
+                <a href="/view-rooms" class="btn btn-outline-secondary">Manage Rooms</a>
+                </div>
             <% } %>
             <% if (user.role === 'employee') { %>
                 <div class="col-auto">
@@ -55,9 +58,7 @@
                     <a href="/request-admin_access" class="btn btn-outline-warning">Request Admin</a>
                 </div>
             <% } %>
-            <div class="col-auto">
-                <a href="/view-rooms" class="btn btn-outline-secondary">Available Rooms</a>
-            </div>
+            
             <div class="col-auto">
                 <a href="/view-waitlist" class="btn btn-outline-secondary">Waitlist</a>
             </div>
