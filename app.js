@@ -330,6 +330,41 @@ app.get('/view_users', checkAdmin, (req, res) => {
     });
 });
 
+// Delete user account (staff and users only, not admins)
+app.post('/delete-user/:email', checkAdmin, (req, res) => {
+    const email = decodeURIComponent(req.params.email);
+    
+    // First check if user is admin (cannot delete admins)
+    const checkSql = 'SELECT role FROM users WHERE email = ?';
+    db.query(checkSql, [email], (error, results) => {
+        if (error) {
+            req.flash('error', 'Error checking user role.');
+            return res.redirect('/view_users');
+        }
+        
+        if (results.length === 0) {
+            req.flash('error', 'User not found.');
+            return res.redirect('/view_users');
+        }
+        
+        if (results[0].role === 'admin') {
+            req.flash('error', 'Cannot delete admin accounts.');
+            return res.redirect('/view_users');
+        }
+        
+        // Delete the user
+        const deleteSql = 'DELETE FROM users WHERE email = ?';
+        db.query(deleteSql, [email], (deleteError) => {
+            if (deleteError) {
+                req.flash('error', 'Error deleting user.');
+            } else {
+                req.flash('success', 'User deleted successfully.');
+            }
+            res.redirect('/view_users');
+        });
+    });
+});
+
 app.get('/manage_admin_access_requests', checkAdmin, (req, res) => {
     const sql = 'SELECT * FROM admin_requests ORDER BY requested_at DESC';
     db.query(sql, (error, results) => {
@@ -483,8 +518,8 @@ app.get("/test-staff-login", (req, res) => {
 app.get("/staff-dashboard", (req, res) => {
   const user = req.session.user;
 
-  if (!user || user.role !== "staff") {
-    return res.status(403).send("Only staff can view this page.");
+  if (!user || (user.role !== "staff" && user.role !== "admin")) {
+    return res.status(403).send("Only staff and admins can view this page.");
   }
 
   // CHANGED: Using email as the identifier instead of user_id
