@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>My Bookings</title>
+  <link rel="stylesheet" href="/style.css">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+  <%- include('partials/header') %>
+  
+  <div class="container mt-4">
+    <h1>My Future Bookings</h1>
+
+    <% if (bookings.length === 0) { %>
+      <p>You have no future bookings.</p>
+    <% } %>
+
+  <% bookings.forEach(booking => { %>
+    <div>
+      <!-- UPDATED: Using room_name from JOIN, start_time/end_time from JOIN -->
+      <p>Room: <%= booking.room_name || 'N/A' %></p>
+      <p>Date: <%= booking.booking_date %></p>
+      <p>Time: <%= booking.start_time || 'N/A' %> to <%= booking.end_time || 'N/A' %></p>
+      <p>Status: <%= booking.status %></p>
+
+      <form action="/cancel-booking" method="POST">
+        <input type="hidden" name="booking_id" value="<%= booking.booking_id %>">
+        <button type="submit">Cancel booking</button>
+      </form>
+    </div>
+    </div>
+    <hr>
+  <% }) %>
+  </div>
+</body>
+</html>

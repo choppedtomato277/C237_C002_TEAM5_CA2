@@ -56,7 +56,16 @@ const checkAdmin = (req, res, next) => {
         next()
     } else {
         req.flash('error', 'Access is Denied, If you are an Admin, Please use an Admin account to access this resource!')
-        res.redirect('/') // to be updated
+        res.redirect('/') // UPDATED: redirect to home page for non-admins
+    }
+}
+
+const checkStaff = (req, res, next) => {
+    if (req.session.user && req.session.user.role === 'staff'){
+        next()
+    } else {
+        req.flash('error', 'Access is Denied. Staff only.')
+        res.redirect('/')
     }
 }
 
@@ -118,8 +127,8 @@ app.post('/register', validateRegistration, (req, res) => {
             return res.redirect('/register')
         }
         
-        const sql = 'INSERT INTO users (email, name, password, role, created_at) VALUES (?,?,SHA1(?),?,?)'
-        db.query(sql, [email, name, password, role, created_time], (error, results) => {
+        const sql = 'INSERT INTO users (email, name, password, role, created_at, misuse_flag) VALUES (?,?,SHA1(?),?,?,?)'
+        db.query(sql, [email, name, password, role, created_time, 0], (error, results) => {
             if (error) throw error
             console.log(results)
             req.flash('success', 'Registration successful! Please log in.')
@@ -173,7 +182,14 @@ app.post('/login', (req,res)=>{
         if (results.length > 0) { // if there is a user with the valid credentials inside the database store them in the req.session.user
             req.session.user = results[0] // results[0] because "results" itself is an array, it not later have to access req.session.user[0].role to check the role
             req.flash('success', 'Login Successful!')
-            res.redirect('/') //to the main page
+            // UPDATED: Redirect based on user role - align with Carissa's pages
+            if (req.session.user.role === 'employee') {
+                res.redirect('/my-bookings')  // Carissa's page for employees
+            } else if (req.session.user.role === 'staff') {
+                res.redirect('/staff-dashboard')  // Carissa's page for staff
+            } else {
+                res.redirect('/')  // admin and others go to home
+            }
         } else {
             // Invalid credentials
             req.flash('error', 'Invalid email or password.');
@@ -259,6 +275,175 @@ app.post('/admin_access_requests/:id/reject', checkAdmin, (req, res) => {
     })
 })
 //end of manage admin access requests route (LWIN HTOO MYAT)
+
+
+// ============================================================
+// START OF CARISSA SECTION - Study Room Booking App Features
+// ============================================================
+
+/* 
+   CHANGES MADE TO INTEGRATE WITH MAIN APP DATABASE:
+   - Changed user_id to email (since email is the PK in users table)
+   - Changed employee_id to email (since bookings table uses email FK)
+   - Removed start_time from ORDER BY (bookings use time_slot_id instead)
+   - misuse_flag already exists in users table - no change needed
+   - Added JOIN with time_slots and rooms tables for full booking info
+   - Changed cancel to UPDATE status='cancelled' instead of DELETE
+*/
+
+// TEMPORARY test employee login (CARISSA)
+app.get("/test-login", (req, res) => {
+  req.session.user = {
+    email: "test@employee.com",  // CHANGED: using email instead of user_id
+    role: "employee"
+  };
+
+  res.send("Test employee login successful. Now go to /my-bookings");
+});
+
+// Employee views their own future bookings (CARISSA)
+app.get("/my-bookings", (req, res) => {
+  const user = req.session.user;
+
+  if (!user || user.role !== "employee") {
+    return res.status(403).send("Only employees can view this page.");
+  }
+
+  // UPDATED: Using correct column names - timeslot_id (not time_slot_id), JOIN with time_slots and rooms
+  const sql = `
+    SELECT b.*, t.start_time, t.end_time, r.room_name
+    FROM bookings b
+    LEFT JOIN timeslots t ON b.time_slot_id = t.timeslot_id
+    LEFT JOIN study_rooms r ON b.room_id = r.room_id
+    WHERE b.email = ?
+    AND b.booking_date >= CURDATE()
+    AND b.status = 'confirmed'
+    ORDER BY b.booking_date ASC, t.start_time ASC
+  `;
+
+  db.query(sql, [user.email], (err, bookings) => {
+    if (err) {
+      console.error(err);
+      return res.status(500).send("Could not load bookings.");
+    }
+
+    res.render("my-bookings", { user: req.session.user, bookings });
+  });
+});
+
+// Employee cancels one of their own future bookings (CARISSA)
+app.post("/cancel-booking", (req, res) => {
+  const user = req.session.user;
+  const bookingId = req.body.booking_id;
+
+  if (!user || user.role !== "employee") {
+    return res.status(403).send("Only employees can cancel bookings.");
+  }
+
+  // CHANGED: Using email instead of employee_id, SET status to cancelled instead of DELETE
+  const sql = `
+    UPDATE bookings
+    SET status = 'cancelled'
+    WHERE booking_id = ?
+      AND email = ?
+      AND booking_date >= CURDATE()
+      AND status = 'confirmed'
+  `;
+
+  db.query(sql, [bookingId, user.email], (err, result) => {
+    if (err) {
+      console.error(err);
+      return res.status(500).send("Could not cancel booking.");
+    }
+
+    if (result.affectedRows === 0) {
+      return res.send("Booking was not found or cannot be cancelled.");
+    }
+
+    res.redirect("/my-bookings");
+  });
+});
+
+// TEMPORARY test staff login (CARISSA)
+app.get("/test-staff-login", (req, res) => {
+  req.session.user = {
+    email: "test@staff.com",  // CHANGED: using email instead of user_id
+    role: "staff"
+  };
+
+  res.send("Test staff login successful. Now go to /staff-dashboard");
+});
+
+// Staff page: show all employees (CARISSA)
+app.get("/staff-dashboard", checkStaff, (req, res) => {
+  const user = req.session.user;
+
+  if (!user || user.role !== "staff") {
+    return res.status(403).send("Only staff can view this page.");
+  }
+
+  // CHANGED: Using email as the identifier instead of user_id
+  const sql = `
+    SELECT email, name, misuse_flag
+    FROM users
+    WHERE role = 'employee'
+  `;
+
+  db.query(sql, (err, employees) => {
+    if (err) {
+      console.error(err);
+      return res.status(500).send("Could not load employees.");
+    }
+
+    res.render("staff-dashboard", { user: req.session.user, employees });
+  });
+});
+
+// Staff adds one misuse flag to an employee (CARISSA)
+app.post("/add-misuse-flag", checkStaff, (req, res) => {
+  const user = req.session.user;
+  const employeeEmail = req.body.email;  // CHANGED: Using email instead of employee_id
+
+  if (!user || user.role !== "staff") {
+    return res.status(403).send("Only staff can add misuse flags.");
+  }
+
+  // CHANGED: Using email as the identifier instead of user_id
+  const sql = `
+    UPDATE users
+    SET misuse_flag = misuse_flag + 1
+    WHERE email = ?
+    AND role = 'employee'
+  `;
+
+  db.query(sql, [employeeEmail], (err, result) => {
+    if (err) {
+      console.error(err);
+      return res.status(500).send("Could not add misuse flag.");
+    }
+
+    if (result.affectedRows === 0) {
+      return res.send("Employee not found.");
+    }
+
+    res.redirect("/staff-dashboard");
+  });
+});
+
+// END OF CARISSA SECTION
+// ============================================================
+
+
+// Logout route (LWIN HTOO MYAT - ADDED)
+// UPDATED: Added logout functionality - destroys session and redirects to login
+app.get('/logout', (req, res) => {
+    req.session.destroy((err) => {
+        if (err) {
+            console.error('Error destroying session:', err);
+        }
+        res.redirect('/login');
+    });
+});
 
 
 app.listen(3000, () => {
