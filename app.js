@@ -34,10 +34,10 @@ app.use(session({
     secret: 'secret',
     resave: false, 
     saveUninitialized: true, 
-    cookie: { maxAge: 7 * 24 * 60 * 60 * 1000 }
+    cookie: { maxAge: 7 * 24 * 60 * 60 * 1000 } 
 }));
 
-// Auth Middlewares
+// Auth Middlewares LWIN HTOO MYAT
 const checkAuthenticated = (req, res, next) => {
     if (req.session.user) { 
         next();
@@ -65,7 +65,7 @@ const checkStaff = (req, res, next) => {
     }
 };
 
-// Check if user is Staff or Admin
+// Check if user is Staff or Admin LWIN HTOO MYAT
 const checkStaffOrAdmin = (req, res, next) => {
     if (req.session.user && (req.session.user.role === 'staff' || req.session.user.role === 'admin')) {
         next();
@@ -74,14 +74,16 @@ const checkStaffOrAdmin = (req, res, next) => {
         res.redirect('/view-rooms');
     }
 };
+// END OF AUTH MIDDLEWARES LWIN HTOO MYAT
 
-// Homepage
+// Homepage LWIN HTOO MYAT
 app.get('/', (req, res) => {
     res.render('partials/index', { user: req.session.user, error: req.flash('error'), success: req.flash('success') });
 }); 
 
+
 // ==========================================
-// WAITLIST ROUTES (TEAMMATE FEATURE)
+// WAITLIST ROUTES (KHOON YONG)
 // ==========================================
 const ACTIVE_WAITING_VALUE = '1';
 const ACTIVE_CANCELLED_VALUE = '0';
@@ -222,10 +224,12 @@ app.post('/cancel-waitlist', (req, res) => {
         res.json({ message: 'Waitlist entry cancelled.' });
     });
 });
+// END OF KHOON YONG'S CODE
 
 // ==========================================
 // REGISTRATION & AUTH ROUTES
 // ==========================================
+//START OF REGISTRATION ROUTE (LWIN HTOO MYAT)
 const validateRegistration = (req, res, next) => {
     const { email, name, password, role } = req.body;
 
@@ -257,8 +261,8 @@ app.post('/register', validateRegistration, (req, res) => {
         if (checkError) throw checkError;
         
         if (checkResults.length > 0) {
-            req.flash('error', 'Email already registered!');
-            return res.redirect('/register');
+            req.flash('error', 'Email already registered! Please login below.');
+            return res.redirect('/login'); // redirects back to the login not the register page :)
         }
         
         const sql = 'INSERT INTO users (email, name, password, role, created_at) VALUES (?,?,SHA1(?),?,?)';
@@ -269,7 +273,9 @@ app.post('/register', validateRegistration, (req, res) => {
         });
     });
 });
+//END OF REGISTRATION ROUTES
 
+// START OF REQUESTING ADMIN ACCESS TO EXISTING ADMINS ROUTES (LWIN HTOO MYAT)
 app.get('/request-admin_access', checkAuthenticated, (req, res) => {
     res.render('request_admin_access_form', { user: req.session.user });
 });
@@ -287,6 +293,10 @@ app.post('/request-admin_access', checkAuthenticated, (req, res) => {
     });
 });
 
+//END OF REQUESTING ADMIN ACCESS ROUTES
+
+
+//START OF LOGIN ROUTES (LWIN HTOO MYAT)
 app.get('/login', (req, res) => {
     res.render('login_page', { message: req.flash('success'), error: req.flash('error') });
 });
@@ -321,7 +331,10 @@ app.post('/login', (req, res) => {
         }
     });
 });
+//END OF LOGIN ROUTES
 
+
+//MANAGE USERS (LWIN HTOO MYAT)
 app.get('/view_users', checkAdmin, (req, res) => {
     const sql = 'SELECT * FROM users';
     db.query(sql, (error, results) => {
@@ -329,8 +342,10 @@ app.get('/view_users', checkAdmin, (req, res) => {
         res.render('view_users', { user: req.session.user, users: results });
     });
 });
+//MANAGE USERS (LWIN HTOO MYAT)
 
-// Delete user account (staff and users only, not admins)
+
+// Delete user account (staff and users only, not admins) LWIN HTOO MYAT
 app.post('/delete-user/:email', checkAdmin, (req, res) => {
     const email = decodeURIComponent(req.params.email);
     
@@ -346,7 +361,11 @@ app.post('/delete-user/:email', checkAdmin, (req, res) => {
             req.flash('error', 'User not found.');
             return res.redirect('/view_users');
         }
-        
+
+        /* here we are checking the role here on the server side too. 
+        because hiding the delete button in EJS only stops normal clicks 
+        this is to prevent someone from bypassing the website somehow 
+        and sending a direct POST request to delete an admin */
         if (results[0].role === 'admin') {
             req.flash('error', 'Cannot delete admin accounts.');
             return res.redirect('/view_users');
@@ -354,8 +373,8 @@ app.post('/delete-user/:email', checkAdmin, (req, res) => {
         
         // Delete the user
         const deleteSql = 'DELETE FROM users WHERE email = ?';
-        db.query(deleteSql, [email], (deleteError) => {
-            if (deleteError) {
+        db.query(deleteSql, [email], (deleteError) => { //here notice we dont need to use result 
+            if (deleteError) {                          //cus deleting isnt going to return anything
                 req.flash('error', 'Error deleting user.');
             } else {
                 req.flash('success', 'User deleted successfully.');
@@ -365,8 +384,10 @@ app.post('/delete-user/:email', checkAdmin, (req, res) => {
     });
 });
 
+
+//START OF ADMIN ACCESS REQUEST ROUTES LWIN HTOO MYAT
 app.get('/manage_admin_access_requests', checkAdmin, (req, res) => {
-    const sql = 'SELECT * FROM admin_requests ORDER BY requested_at DESC';
+    const sql = 'SELECT * FROM admin_requests ORDER BY requested_at DESC'; // order by desc because we want to see the lastest requests first
     db.query(sql, (error, results) => {
         if (error) throw error;
         res.render('manage_admin_access_requests', { user: req.session.user, requests: results });
@@ -572,6 +593,263 @@ app.post("/add-misuse-flag", (req, res) => {
 });
 
 // END OF CARISSA SECTION
+// ============================================================
+
+
+// ==========================================
+// MEMBER 3: ZAW - MANAGE BOOKINGS
+// ==========================================
+
+// GET /daily-schedule - view today's bookings
+app.get('/daily-schedule', checkAuthenticated, (req, res) => {
+  const sql = `
+    SELECT b.booking_id, b.booking_date, b.time_slot_id, 
+           r.room_name, r.capacity,
+           u.name AS booked_by, u.email,
+           b.status
+    FROM bookings b
+    JOIN study_rooms r ON b.room_id = r.room_id
+    JOIN users u ON b.email = u.email
+    WHERE b.booking_date = CURDATE()
+    ORDER BY b.time_slot_id ASC
+  `;
+  db.query(sql, (error, bookings) => {
+    if (error) {
+      console.error('Database query error:', error.message);
+      return res.send('Error retrieving today\'s schedule');
+    }
+    res.render('daily-schedule', {
+      bookings: bookings,
+      user: req.session.user,
+      message: req.flash('success'),
+      error: req.flash('error')
+    });
+  });
+});
+
+// GET /create-booking - show the booking form
+app.get('/create-booking', checkAuthenticated, (req, res) => {
+  db.query("SELECT * FROM study_rooms WHERE LOWER(condition_status) = 'available'", (error, rooms) => {
+    if (error) {
+      console.error('Database query error:', error.message);
+      return res.send('Error loading rooms');
+    }
+    res.render('create-booking', {
+      rooms: rooms,
+      user: req.session.user,
+      error: req.flash('error')
+    });
+  });
+});
+
+// POST /create-booking - Employee submits a new booking
+app.post('/create-booking', checkAuthenticated, (req, res) => {
+  const { booking_date, time_slot_id, room_id } = req.body;
+  const email = req.session.user.email;
+
+  if (!booking_date || !time_slot_id || !room_id) {
+    req.flash('error', 'All fields are required.');
+    return res.redirect('/create-booking');
+  }
+
+  // ENHANCEMENT: auto-generate a unique Booking ID server-side instead of
+  // relying on the user to type one. This removes collision risk entirely
+  // (Date.now() is unique to the millisecond) and removes the need for
+  // manual format validation, since we fully control the generated format.
+  const booking_id = 'BK' + Date.now();
+
+  // VALIDATION: booking date cannot be in the past
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const chosenDate = new Date(booking_date);
+  if (chosenDate < today) {
+    req.flash('error', 'You cannot book a date in the past.');
+    return res.redirect('/create-booking');
+  }
+
+  // VALIDATION: time slot must be a real slot number (1-11)
+  const slotNum = parseInt(time_slot_id, 10);
+  if (isNaN(slotNum) || slotNum < 1 || slotNum > 11) {
+    req.flash('error', 'Invalid time slot selected.');
+    return res.redirect('/create-booking');
+  }
+
+  // ENHANCEMENT: prevent double-booking the same room/date/time
+  // A room is only considered "taken" if there's an active booking —
+  // cancelled and no-show bookings both free up the slot for reuse.
+  const checkSql = `
+    SELECT * FROM bookings 
+    WHERE room_id = ? AND booking_date = ? AND time_slot_id = ? 
+    AND status NOT IN ('cancelled', 'no-show')
+  `;
+  db.query(checkSql, [room_id, booking_date, time_slot_id], (checkErr, existing) => {
+    if (checkErr) {
+      console.error('Database query error:', checkErr.message);
+      req.flash('error', 'Something went wrong. Please try again.');
+      return res.redirect('/create-booking');
+    }
+
+    if (existing.length > 0) {
+      req.flash('error', 'This room is already booked for that time slot.');
+      return res.redirect('/create-booking');
+    }
+
+    const insertSql = `
+      INSERT INTO bookings (booking_id, booking_date, time_slot_id, room_id, email, status)
+      VALUES (?, ?, ?, ?, ?, 'confirmed')
+    `;
+    db.query(insertSql, [booking_id, booking_date, time_slot_id, room_id, email], (error, results) => {
+      if (error) {
+        console.error('Database insert error:', error.message);
+        req.flash('error', 'Error creating booking.');
+        return res.redirect('/create-booking');
+      }
+      req.flash('success', 'Booking created successfully! Your Booking ID is ' + booking_id + '.');
+      res.redirect('/daily-schedule');
+    });
+  });
+});
+
+// GET /booking/:booking_id - view full details of one booking
+app.get('/booking/:booking_id', checkAuthenticated, (req, res) => {
+  const { booking_id } = req.params;
+  const sql = `
+    SELECT b.booking_id, b.booking_date, b.time_slot_id, b.status,
+           r.room_id, r.room_name, r.capacity,
+           u.name AS booked_by, u.email
+    FROM bookings b
+    JOIN study_rooms r ON b.room_id = r.room_id
+    JOIN users u ON b.email = u.email
+    WHERE b.booking_id = ?
+  `;
+  db.query(sql, [booking_id], (error, results) => {
+    if (error) {
+      console.error('Database query error:', error.message);
+      return res.send('Error retrieving booking details');
+    }
+    if (results.length === 0) {
+      return res.send('Booking not found');
+    }
+    res.render('booking-detail', { booking: results[0], user: req.session.user });
+  });
+});
+
+// GET /booking/:booking_id/edit - show the edit form
+app.get('/booking/:booking_id/edit', checkAuthenticated, (req, res) => {
+  const { booking_id } = req.params;
+  db.query('SELECT * FROM bookings WHERE booking_id = ?', [booking_id], (error, bookingResults) => {
+    if (error || bookingResults.length === 0) {
+      return res.send('Booking not found');
+    }
+
+    // OWNERSHIP CHECK: only the booking's owner or staff can view/edit it
+    const isOwner = bookingResults[0].email === req.session.user.email;
+    const isStaff = req.session.user.role === 'staff';
+    if (!isOwner && !isStaff) {
+      req.flash('error', 'You can only edit your own bookings.');
+      return res.redirect('/daily-schedule');
+    }
+
+    db.query('SELECT * FROM study_rooms', (err2, rooms) => {
+      if (err2) return res.send('Error loading rooms');
+      res.render('booking-edit', { booking: bookingResults[0], rooms: rooms, user: req.session.user });
+    });
+  });
+});
+
+// POST /booking/:booking_id/edit - save the changes
+app.post('/booking/:booking_id/edit', checkAuthenticated, (req, res) => {
+  const { booking_id } = req.params;
+  const { booking_date, time_slot_id, room_id } = req.body;
+
+  // First, look up who owns this booking before allowing any change
+  db.query('SELECT email FROM bookings WHERE booking_id = ?', [booking_id], (ownerErr, ownerResults) => {
+    if (ownerErr || ownerResults.length === 0) {
+      req.flash('error', 'Booking not found.');
+      return res.redirect('/daily-schedule');
+    }
+
+    // OWNERSHIP CHECK: only the booking's owner or staff can save changes
+    const isOwner = ownerResults[0].email === req.session.user.email;
+    const isStaff = req.session.user.role === 'staff';
+    if (!isOwner && !isStaff) {
+      req.flash('error', 'You can only edit your own bookings.');
+      return res.redirect('/daily-schedule');
+    }
+
+    // VALIDATION: time slot must be a real slot number (1-11)
+    const slotNum = parseInt(time_slot_id, 10);
+    if (isNaN(slotNum) || slotNum < 1 || slotNum > 11) {
+      req.flash('error', 'Invalid time slot selected.');
+      return res.redirect('/booking/' + booking_id + '/edit');
+    }
+
+    const sql = `
+      UPDATE bookings 
+      SET booking_date = ?, time_slot_id = ?, room_id = ?
+      WHERE booking_id = ?
+    `;
+    db.query(sql, [booking_date, time_slot_id, room_id, booking_id], (error) => {
+      if (error) {
+        console.error('Database update error:', error.message);
+        req.flash('error', 'Error updating booking.');
+        return res.redirect('/booking/' + booking_id + '/edit');
+      }
+      req.flash('success', 'Booking updated successfully!');
+      res.redirect('/daily-schedule');
+    });
+  });
+});
+
+// POST /mark-no-show - Staff marks a booking as no-show (triggered from daily-schedule page)
+app.post('/mark-no-show', checkAuthenticated, checkStaff, (req, res) => {
+  const { booking_id } = req.body;
+
+  const sql = `UPDATE bookings SET status = 'no-show' WHERE booking_id = ?`;
+  db.query(sql, [booking_id], (error, results) => {
+    if (error) {
+      console.error('Database update error:', error.message);
+      req.flash('error', 'Error updating booking status.');
+      return res.redirect('/daily-schedule');
+    }
+    req.flash('success', 'Booking marked as no-show.');
+    res.redirect('/daily-schedule');
+  });
+});
+
+// GET /manage-bookings - hub page for the booking feature
+app.get('/manage-bookings', checkAuthenticated, (req, res) => {
+  const statusFilter = req.query.status || 'all';
+
+  let sql = `
+    SELECT b.booking_id, b.booking_date, b.time_slot_id, 
+           r.room_name, u.name AS booked_by, b.status
+    FROM bookings b
+    JOIN study_rooms r ON b.room_id = r.room_id
+    JOIN users u ON b.email = u.email
+  `;
+  const params = [];
+
+  if (statusFilter !== 'all') {
+    sql += ' WHERE b.status = ?';
+    params.push(statusFilter);
+  }
+
+  sql += ' ORDER BY b.booking_date DESC, b.time_slot_id ASC LIMIT 20';
+
+  db.query(sql, params, (error, recentBookings) => {
+    if (error) {
+      console.error('Database query error:', error.message);
+      return res.send('Error loading dashboard');
+    }
+    res.render('manage-bookings', {
+      recentBookings,
+      user: req.session.user,
+      statusFilter: statusFilter
+    });
+  });
+});
+// END OF ZAW'S CODES
 // ============================================================
 
 
