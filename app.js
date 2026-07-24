@@ -75,6 +75,7 @@ const checkStaffOrAdmin = (req, res, next) => {
     }
 };
 
+
 // Homepage
 app.get('/', (req, res) => {
     res.render('partials/index', { user: req.session.user, error: req.flash('error'), success: req.flash('success') });
@@ -671,48 +672,72 @@ app.post('/update-room-status', checkStaffOrAdmin, (req, res) => {
 // MEMBER 4: REVIEWS AND ANNOUCMENTS (ELISHA)
 // ==========================================
 
-
-
 app.get('/review_form', (req, res) => {
-    res.render('review_form', {
-        user: req.session.user,
-        error: req.flash('error'),
-        success: req.flash('success')
+    const sql = 'SELECT room_id, room_name FROM study_rooms';
+    //Gets rooms from sql data base to add to dropdown table
+    db.query(sql, (error, rooms) => {
+        if (error) {
+            console.error('Error loading rooms:', error);
+            req.flash('error', 'Unable to load room list.');
+            return res.redirect('/');
+        }
+
+        res.render('review_form', {
+            user: req.session.user,
+            error: req.flash('error'),
+            success: req.flash('success'),
+            rooms
+        });
     });
 });
 
 app.post('/review', (req, res) => {
+    // Ensures user must be logged in to submit a review
     if (!req.session.user) {
         req.flash('error', 'Please log in to submit a review.');
         return res.redirect('/login');
     }
 
-    const { score, review } = req.body;
+    const { score, review, room_id } = req.body;
     const user_email = req.session.user.email;
-    const room_id = req.body.room_id || 'N/A';
-
-    if (!score || !review || review.trim() === '') {
-        req.flash('error', 'Please provide a rating and a review.');
+    // Ensures all fields are filled before user is able to submit form
+    if (!room_id || !score || !review || review.trim() === '') {
+        req.flash('error', 'Please select a room, provide a rating, and write a review.');
         return res.redirect('/review_form');
     }
-
-    const sql = 'INSERT INTO reviews (user_email, room_id, review_score, review) VALUES (?, ?, ?, ?)';
-
-    db.query(sql, [user_email, room_id, score, review.trim()], (error) => {
-        if (error) {
-            console.error('Error saving review:', error);
-            req.flash('error', 'Unable to save your review right now.');
+    //Checks if rooms exist
+    const roomCheckSql = 'SELECT room_id FROM study_rooms WHERE room_id = ?';
+    db.query(roomCheckSql, [room_id], (checkError, rows) => {
+        if (checkError) {
+            console.error('Error validating room:', checkError);
+            req.flash('error', 'Unable to validate selected room.');
             return res.redirect('/review_form');
         }
 
-        req.flash('success', 'Review submitted successfully!');
-        res.redirect('/review_form');
+        if (rows.length === 0) {
+            req.flash('error', 'Selected room is not valid.');
+            return res.redirect('/review_form');
+        }
+
+        const reviewDate = new Date().toISOString().slice(0, 10);
+        const sql = 'INSERT INTO reviews (user_email, room_id, review_score, review, review_date) VALUES (?, ?, ?, ?, ?)';
+
+        db.query(sql, [user_email, room_id, score, review.trim(), reviewDate], (error) => {
+            if (error) {
+                console.error('Error saving review:', error);
+                req.flash('error', 'Unable to save your review right now.');
+                return res.redirect('/review_form');
+            }
+
+            req.flash('success', 'Review submitted successfully!');
+            res.redirect('/review_form');
+        });
     });
 });
 
-app.get('/view_reviews', (req, res) => {
+app.get('/view_reviews', checkStaffOrAdmin, (req, res) => {
     const sql = `
-        SELECT review_id, user_email, room_id, review_score, review
+        SELECT review_id, user_email, room_id, review_score, review, review_date
         FROM reviews
         ORDER BY review_id DESC
     `;
@@ -727,7 +752,21 @@ app.get('/view_reviews', (req, res) => {
     });
 });
 
-
+//delete reviews (only accessible to admins)
+app.post('/delete-review/:review_id', checkAdmin, (req, res) => {
+    const reviewId = decodeURIComponent(req.params.review_id);
+    const deleteSql = 'DELETE FROM reviews WHERE review_id = ?';
+    
+    db.query(deleteSql, [reviewId], (error, result) => {
+        if (error) {
+            console.error('Error deleting review:', error);
+            req.flash('error', 'Unable to delete review.');
+        } else {
+            req.flash('success', 'Review deleted successfully.');
+        }
+        res.redirect('/view_reviews');
+    });
+});
 
 const PORT = 3000;
 app.listen(PORT, () => {
