@@ -6,9 +6,10 @@
             <% if (user) { %>
                 <span class="nav-item nav-link text-muted">Welcome, <%= user.name %></span>
 
-                <!-- Everyone sees Dashboard & Waitlist -->
+                <!-- Everyone sees Dashboard & Waitlist & Can submit a review -->
                 <a class="nav-item nav-link text-primary" href="/view-rooms">Rooms</a>
                 <a class="nav-item nav-link text-primary" href="/view-waitlist">View Waitlist</a>
+                <a class="nav-item nav-link text-primary" href="/review_form">Submit Reviews</a>
 
                 <!-- Admin only: Add Room -->
                 <% if (user.role === 'admin') { %>
@@ -20,6 +21,7 @@
                 <!-- Staff only: Staff Dashboard -->
                 <% if (user.role === 'staff') { %>
                     <a class="nav-item nav-link text-primary" href="/staff-dashboard">Flag Misuse</a>
+                    <a class="nav-item nav-link text-primary" href="/view_reviews">Reviews</a>
                 <% } %>
 
                 <!-- Employee only: My Bookings & Request Admin Access -->
