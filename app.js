@@ -57,11 +57,11 @@ const checkAdmin = (req, res, next) => {
 }
 
 const checkStaff = (req, res, next) => {
-    if (req.session.user && req.session.user.role === 'staff'){
-        next()
+    if (req.session.user && req.session.user.role === 'staff') {
+        next();
     } else {
-        req.flash('error', 'Access is Denied. Staff only.')
-        res.redirect('/')
+        req.flash('error', 'Access is Denied. Staff only.');
+        res.redirect('/');
     }
 };
 
@@ -261,22 +261,18 @@ app.post('/register', validateRegistration, (req, res) => {
             return res.redirect('/register');
         }
         
-        const sql = 'INSERT INTO users (email, name, password, role, created_at) VALUES (?,?,SHA1(?),?,?)'
+        const sql = 'INSERT INTO users (email, name, password, role, created_at) VALUES (?,?,SHA1(?),?,?)';
         db.query(sql, [email, name, password, role, created_time], (error, results) => {
-            if (error) throw error
-            console.log(results)
-            req.flash('success', 'Registration successful! Please log in.')
-            res.redirect('/login')
-        })
-    })
-})
-//end of registration routes (LWIN HTOO MYAT)
+            if (error) throw error;
+            req.flash('success', 'Registration successful! Please log in.');
+            res.redirect('/login');
+        });
+    });
+});
 
-
-//start of requesting admin access (LWIN HTOO MYAT)
-app.get('/request-admin_access',checkAuthenticated, (req, res)=>{
-    res.render('request_admin_access_form', {user: req.session.user})
-})
+app.get('/request-admin_access', checkAuthenticated, (req, res) => {
+    res.render('request_admin_access_form', { user: req.session.user });
+});
 
 app.post('/request-admin_access', checkAuthenticated, (req, res) => {
     const reason = req.body.reason;
@@ -306,18 +302,18 @@ app.post('/login', (req, res) => {
 
     db.query(sql, [email, password], (error, results) => {
         if (error) {
-            throw error
-        } 
-        if (results.length > 0) { // if there is a user with the valid credentials inside the database store them in the req.session.user
-            req.session.user = results[0] // results[0] because "results" itself is an array, it not later have to access req.session.user[0].role to check the role
-            req.flash('success', 'Login Successful!')
-            // UPDATED: Redirect based on user role - align with Carissa's pages
+            throw error;
+        }
+        if (results.length > 0) {
+            req.session.user = results[0];
+            req.flash('success', 'Login Successful!');
+            // Redirect based on user role
             if (req.session.user.role === 'employee') {
-                res.redirect('/my-bookings')  // Carissa's page for employees
+                res.redirect('/my-bookings');
             } else if (req.session.user.role === 'staff') {
-                res.redirect('/staff-dashboard')  // Carissa's page for staff
+                res.redirect('/staff-dashboard');
             } else {
-                res.redirect('/')  // admin and others go to home
+                res.redirect('/');
             }
         } else {
             req.flash('error', 'Invalid email or password.');
@@ -556,6 +552,85 @@ app.get('/logout', (req, res) => {
 });
 
 
-app.listen(3000, () => {
-    console.log('Server started on port 3000');
+// ==========================================
+// MEMBER 2: MANAGE ROOMS (FARIS)
+// ==========================================
+
+app.get('/dashboard', (req, res) => {
+    res.redirect('/view-rooms');
+});
+
+app.get('/view-rooms', checkAuthenticated, (req, res) => {
+    const sql = 'SELECT * FROM study_rooms';
+    
+    db.query(sql, (err, results) => {
+        if (err) {
+            console.error('Error fetching rooms:', err);
+            req.flash('error', 'Database error fetching rooms.');
+            return res.redirect('/');
+        }
+        
+        res.render('view-rooms', { 
+            user: req.session.user, 
+            rooms: results,
+            success: req.flash('success'),
+            error: req.flash('error')
+        });
+    });
+});
+
+app.get('/add-room', checkAdmin, (req, res) => {
+    res.render('add-room', { 
+        user: req.session.user,
+        error: req.flash('error')
+    });
+});
+
+app.post('/add-room', checkAdmin, (req, res) => {
+    const { room_id, room_name, capacity, has_whiteboard, has_projector } = req.body;
+
+    if (!room_id || !room_name || parseInt(capacity) <= 0) {
+        req.flash('error', 'Invalid Room ID, name, or capacity!');
+        return res.redirect('/add-room');
+    }
+
+    const sql = 'INSERT INTO study_rooms (room_id, room_name, capacity, has_whiteboard, has_projector) VALUES (?, ?, ?, ?, ?)';
+    
+    db.query(sql, [
+        room_id, 
+        room_name, 
+        capacity, 
+        has_whiteboard ? 1 : 0, 
+        has_projector ? 1 : 0
+    ], (err, result) => {
+        if (err) {
+            console.error('Error adding room:', err);
+            req.flash('error', 'Database error: Could not add room.');
+            return res.redirect('/add-room');
+        }
+
+        req.flash('success', `Room '${room_name}' added successfully!`);
+        res.redirect('/view-rooms');
+    });
+});
+
+app.post('/update-room-status', checkStaffOrAdmin, (req, res) => {
+    const { room_id, condition_status } = req.body;
+
+    const sql = 'UPDATE study_rooms SET condition_status = ? WHERE room_id = ?';
+    db.query(sql, [condition_status, room_id], (err, result) => {
+        if (err) {
+            console.error('Error updating status:', err);
+            req.flash('error', 'Database error: Could not update status.');
+            return res.redirect('/view-rooms');
+        }
+
+        req.flash('success', `Room status updated to '${condition_status}'!`);
+        res.redirect('/view-rooms');
+    });
+});
+
+const PORT = 3000;
+app.listen(PORT, () => {
+    console.log(`Server started at: http://localhost:${PORT}`);
 });
