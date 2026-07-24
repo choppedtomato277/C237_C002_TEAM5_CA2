@@ -22,7 +22,13 @@
                             </div>
                             <div class="d-grid gap-2">
                                 <button type="submit" class="btn btn-primary">Submit Request</button>
-                                <a href="/staff-dashboard" class="btn btn-secondary">Cancel</a> 
+                                <% if (user.role === 'staff') { %>
+                                    <a href="/staff-dashboard" class="btn btn-secondary">Cancel</a>
+                                <% } else if (user.role === 'employee') { %>
+                                    <a href="/my-bookings" class="btn btn-secondary">Cancel</a>
+                                <% } else { %>
+                                    <a href="/" class="btn btn-secondary">Cancel</a>
+                                <% } %>
                             </div>
                         </form>
                     </div>
