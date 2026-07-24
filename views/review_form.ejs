@@ -32,6 +32,12 @@
         <div class="card shadow" style="width: 100%; max-width: 400px;">
             <div class="card-body p-4">
                 <h2 class="text-center mb-3">Review</h2>
+                <% if (success && success.length) { %>
+                    <div class="alert alert-success" role="alert"><%= success %></div>
+                <% } %>
+                <% if (error && error.length) { %>
+                    <div class="alert alert-danger" role="alert"><%= error %></div>
+                <% } %>
                 <form action="/review" method="POST">
                     <div class="mb-3">
                         <label for="room_id" class="form-label">Select Room</label>
