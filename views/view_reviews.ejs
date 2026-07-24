@@ -142,6 +142,12 @@
 
     <div class="container my-5">
         <h2 class="page-title mb-4">Reviews</h2>
+        <% if (success && success.length) { %>
+            <div class="alert alert-success" role="alert"><%= success %></div>
+        <% } %>
+        <% if (error && error.length) { %>
+            <div class="alert alert-danger" role="alert"><%= error %></div>
+        <% } %>
         <% if (reviews && reviews.length > 0) { %>
             <div class="mb-2 filter-bar">
                 <div class="input-group">
