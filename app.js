@@ -748,7 +748,7 @@ app.get('/view_reviews', checkAuthenticated, (req, res) => {
             return res.status(500).send('Unable to load reviews.');
         }
 
-        res.render('view_reviews', { user: req.session.user, reviews: results });
+        res.render('view_reviews', { user: req.session.user, reviews: results, success: req.flash('success'), error: req.flash('error') });
     });
 });
 
